@@ -1,0 +1,6 @@
+; $Id$
+name = Feeds JSONPath Parser
+description = Parse a JSON document using JSONPath.
+package = Feeds
+dependencies[] = feeds
+core = 6.x
