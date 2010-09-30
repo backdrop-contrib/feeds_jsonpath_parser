@@ -18,7 +18,7 @@ class FeedsJSONPathParser extends FeedsParser {
   public function parse(FeedsImportBatch $batch, FeedsSource $source) {
     $array = json_decode($batch->getRaw(), TRUE);
 
-    if (json_last_error() == JSON_ERROR_NONE && is_array($array)) {
+    if (is_array($array)) {
       require_once 'jsonpath-0.8.1.php';
       $source_config = $source->getConfigFor($this);
       $all_items = $this->jsonPath($array, $source_config['context']);
