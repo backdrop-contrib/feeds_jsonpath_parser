@@ -16,7 +16,14 @@ class FeedsJSONPathParser extends FeedsParser {
    * Implementation of FeedsParser::parse().
    */
   public function parse(FeedsImportBatch $batch, FeedsSource $source) {
-    $array = json_decode($batch->getRaw(), TRUE);
+    $raw = trim($batch->getRaw());
+    $array = json_decode($raw, TRUE);
+
+    if (!is_array($array)) {
+      $raw = preg_replace('/}\s*{/', '},{', $raw);
+      $raw = '[' . $raw . ']';
+      $array = json_decode($raw, TRUE);
+    }
 
     if (is_array($array)) {
       require_once 'jsonpath-0.8.1.php';
@@ -33,7 +40,7 @@ class FeedsJSONPathParser extends FeedsParser {
       }
     }
     else {
-      throw new Exception(t('There was an error decoding the JSON input.'));
+      throw new Exception(t('There was an error decoding the JSON document.'));
     }
   }
 
@@ -117,6 +124,7 @@ class FeedsJSONPathParser extends FeedsParser {
       '#required'      => TRUE,
       '#description'   => t('This is the base query, all other queries will run in this context.'),
       '#default_value' => isset($source_config['context']) ? $source_config['context'] : '',
+      '#maxlength'     => 1024,
     );
 
     $form['sources'] = array(
@@ -140,6 +148,7 @@ class FeedsJSONPathParser extends FeedsParser {
         '#title'         => $target,
         '#description'   => t('The JSONPath expression to run.'),
         '#default_value' => isset($source_config['sources'][$source]) ? $source_config['sources'][$source] : '',
+        '#maxlength'     => 1024,
       );
     }
 
@@ -162,7 +171,10 @@ class FeedsJSONPathParser extends FeedsParser {
    * Define defaults.
    */
   public function sourceDefaults() {
-    return array();
+    return array(
+      'context' => '',
+      'sources' => array(),
+    );
   }
 
   /**
