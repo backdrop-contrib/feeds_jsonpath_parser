@@ -203,7 +203,7 @@ class FeedsJSONPathParser extends FeedsParser {
  *
  * Solution is to keep track in the form how many have been added.
  */
-function feeds_jsonpath_parser_form_feeds_ui_mapping_form_alter($form, &$form_state) {
+function feeds_jsonpath_parser_form_feeds_ui_mapping_form_alter(&$form, &$form_state) {
   $newest_jsonpath_mapping = array();
   foreach ($form['#mappings'] as $mapping) {
     if (strpos($mapping['source'], 'jsonpath_parser:') === 0) {
