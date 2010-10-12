@@ -15,8 +15,9 @@ class FeedsJSONPathParser extends FeedsParser {
   /**
    * Implementation of FeedsParser::parse().
    */
-  public function parse(FeedsImportBatch $batch, FeedsSource $source) {
-    $raw = trim($batch->getRaw());
+  public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
+    $raw = trim($fetcher_result->getRaw());
+    $result = new FeedsParserResult();
     $array = json_decode($raw, TRUE);
 
     if (!is_array($array)) {
@@ -36,12 +37,13 @@ class FeedsJSONPathParser extends FeedsParser {
         foreach ($source_config['sources'] as $source => $query) {
           $parsed_item[$source] = $this->parseSourceElement($item, $query);
         }
-        $batch->addItem($parsed_item);
+        $result->addItem($parsed_item);
       }
     }
     else {
       throw new Exception(t('There was an error decoding the JSON document.'));
     }
+    return $result;
   }
 
   /**
@@ -85,13 +87,7 @@ class FeedsJSONPathParser extends FeedsParser {
      * If their is one result, return it directly.  If there is more than one,
      * return the array.
      */
-    $count = count($results);
-    if ($count == 1) {
-      return $results[0];
-    }
-    if ($count > 1) {
-      return $results;
-    }
+    return (count($item) <= 1) ? reset($item) : $item;
   }
 
   /**
