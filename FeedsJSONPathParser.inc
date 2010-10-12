@@ -217,5 +217,4 @@ function feeds_jsonpath_parser_form_feeds_ui_mapping_form_alter(&$form, &$form_s
     unset($form['source']['#options'][$default_source]);
     $form['source']['#options'][$a . ':' . ++$count] = $label;
   }
-  return $form;
 }
