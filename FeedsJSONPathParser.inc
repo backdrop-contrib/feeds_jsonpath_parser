@@ -55,10 +55,10 @@ class FeedsJSONPathParser extends FeedsParser {
           if (isset($parsed)) {
             // Variable sunstitution can't handle arrays.
             if (!is_array($parsed)) {
-              $variables['[' . $mappings[$source] . ']'] = $parsed;
+              $variables['{' . $mappings[$source] . '}'] = $parsed;
             }
             else {
-              $variables['[' . $mappings[$source] . ']'] = '';
+              $variables['{' . $mappings[$source] . '}'] = '';
             }
             $parsed_item[$source] = $parsed;
           }
@@ -170,11 +170,9 @@ class FeedsJSONPathParser extends FeedsParser {
       '#maxlength' => 1024,
       '#size' => 80,
     );
-
     $form['jsonpath']['sources'] = array(
       '#type' => 'fieldset',
     );
-
     if (!empty($uniques)) {
       $items = array(
         format_plural(count($uniques),
@@ -198,7 +196,7 @@ class FeedsJSONPathParser extends FeedsParser {
       if (!empty($variables)) {
         $form['jsonpath']['sources'][$source]['#description'] .= '<br>' . t('The variables '. implode(', ', $variables). ' are availliable for replacement.');
       }
-      $variables[] = '[' . $target . ']';
+      $variables[] = '{' . $target . '}';
     }
     $form['jsonpath']['debug'] = array(
       '#type' => 'fieldset',
