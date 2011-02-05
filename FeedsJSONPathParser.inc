@@ -55,10 +55,10 @@ class FeedsJSONPathParser extends FeedsParser {
           if (isset($parsed)) {
             // Variable sunstitution can't handle arrays.
             if (!is_array($parsed)) {
-              $variables['$' . $mappings[$source]] = $parsed;
+              $variables['[' . $mappings[$source] . ']'] = $parsed;
             }
             else {
-              $variables['$' . $mappings[$source]] = '';
+              $variables['[' . $mappings[$source] . ']'] = '';
             }
             $parsed_item[$source] = $parsed;
           }
@@ -165,7 +165,7 @@ class FeedsJSONPathParser extends FeedsParser {
       '#type' => 'textfield',
       '#title' => t('Context'),
       '#required' => TRUE,
-      '#description' => t('This is the base query, all other queries will run in this context.'),
+      '#description' => t('This is the base query, all other queries will execute in this context.'),
       '#default_value' => isset($source_config['context']) ? $source_config['context'] : '',
       '#maxlength' => 1024,
       '#size' => 80,
@@ -185,16 +185,20 @@ class FeedsJSONPathParser extends FeedsParser {
       );
       $form['jsonpath']['sources']['help']['#markup'] = '<div class="help">' . theme('item_list', array('items' => $items)) . '</div>';
     }
-
+    $variables = array();
     foreach ($mappings as $source => $target) {
       $form['jsonpath']['sources'][$source] = array(
         '#type' => 'textfield',
         '#title' => $target,
-        '#description' => t('The JSONPath expression to run.'),
+        '#description' => t('The JSONPath expression to execute.'),
         '#default_value' => isset($source_config['sources'][$source]) ? $source_config['sources'][$source] : '',
         '#maxlength' => 1024,
         '#size' => 80,
       );
+      if (!empty($variables)) {
+        $form['jsonpath']['sources'][$source]['#description'] .= '<br>' . t('The variables '. implode(', ', $variables). ' are availliable for replacement.');
+      }
+      $variables[] = '[' . $target . ']';
     }
     $form['jsonpath']['debug'] = array(
       '#type' => 'fieldset',
