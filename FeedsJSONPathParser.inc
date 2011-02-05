@@ -16,10 +16,24 @@ class FeedsJSONPathParser extends FeedsParser {
    * Implementation of FeedsParser::parse().
    */
   public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
+    $mappings = $source->importer->processor->config['mappings'];
+    $mappings = $this->filterMappings($mappings);
+    $source_config = $source->getConfigFor($this);
+    // Allow config inheritance.
+    if (empty($source_config)) {
+      $source_config = $this->config;
+    }
+    $this->debug = array_keys(array_filter($source_config['debug']['options']));
+
     $raw = trim($fetcher_result->getRaw());
     $result = new FeedsParserResult();
+    // Set link so we can set the result link attribute.
+    $fetcher_config = $source->getConfigFor($source->importer->fetcher);
+    $result->link = $fetcher_config['source'];
+
     $array = json_decode($raw, TRUE);
 
+    // Support JSON lines format.
     if (!is_array($array)) {
       $raw = preg_replace('/}\s*{/', '},{', $raw);
       $raw = '[' . $raw . ']';
@@ -28,16 +42,28 @@ class FeedsJSONPathParser extends FeedsParser {
 
     if (is_array($array)) {
       require_once 'jsonpath-0.8.1.php';
-      $source_config = $source->getConfigFor($this);
+
       $all_items = $this->jsonPath($array, $source_config['context']);
+      $this->debug($all_items, 'context');
       unset($array);
 
       foreach ($all_items as $item) {
-        $parsed_item = array();
+        $parsed_item = $variables = array();
         foreach ($source_config['sources'] as $source => $query) {
-          $parsed_item[$source] = $this->parseSourceElement($item, $query);
+          $parsed = $this->parseSourceElement($item, $query, $source);
+          // Avoid null values.
+          if (isset($parsed)) {
+            // Variable sunstitution can't handle arrays.
+            if (!is_array($parsed)) {
+              $variables['$' . $mappings[$source]] = $parsed;
+            }
+            else {
+              $variables['$' . $mappings[$source]] = '';
+            }
+            $parsed_item[$source] = $parsed;
+          }
         }
-        $result->addItem($parsed_item);
+        $result->items[] = $parsed_item;
       }
     }
     else {
@@ -76,18 +102,25 @@ class FeedsJSONPathParser extends FeedsParser {
    * @return array
    *   An array containing the results of the query.
    */
-  protected function parseSourceElement($item, $query) {
+  protected function parseSourceElement($item, $query, $source) {
     if (empty($query)) {
       return;
     }
     $results = $this->jsonPath($item, $query);
+    $this->debug($results, $source);
     unset($item);
 
     /**
-     * If their is one result, return it directly.  If there is more than one,
-     * return the array.
+     * If there is one result, return it directly.  If there are no results,
+     * return. Otherwise return the results.
      */
-    return (count($item) <= 1) ? reset($item) : $item;
+    if (count($results) === 1) {
+      return $results[0];
+    }
+    if (count($results) === 0) {
+      return;
+    }
+    return $results;
   }
 
   /**
@@ -95,8 +128,17 @@ class FeedsJSONPathParser extends FeedsParser {
    */
   public function sourceForm($source_config) {
     $form = array();
-    $form['#weight'] = -10;
 
+    if (empty($source_config)) {
+      $source_config = $this->config;
+    }
+    // Add extensions that might get importerd.
+    $fetcher = feeds_importer($this->id)->fetcher;
+    if (isset($fetcher->config['allowed_extensions'])) {
+      if (strpos($fetcher->config['allowed_extensions'], 'json') === FALSE) {
+        $fetcher->config['allowed_extensions'] .= ' json';
+      }
+    }
     $mappings_ = feeds_importer($this->id)->processor->config['mappings'];
     $uniques = $mappings = array();
 
@@ -108,22 +150,28 @@ class FeedsJSONPathParser extends FeedsParser {
         }
       }
     }
-
+    $form['jsonpath'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('JSONPath Parser Settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#tree' => TRUE,
+    );
     if (empty($mappings)) {
-      $form['error_message']['#value'] = 'FeedsJSONPathParser: No mappings were defined.';
+      $form['jsonpath']['error_message']['#markup'] = t('FeedsJSONPathParser: No mappings were defined.');
       return $form;
     }
-
-    $form['context'] = array(
-      '#type'          => 'textfield',
-      '#title'         => t('Context'),
-      '#required'      => TRUE,
-      '#description'   => t('This is the base query, all other queries will run in this context.'),
+    $form['jsonpath']['context'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Context'),
+      '#required' => TRUE,
+      '#description' => t('This is the base query, all other queries will run in this context.'),
       '#default_value' => isset($source_config['context']) ? $source_config['context'] : '',
-      '#maxlength'     => 1024,
+      '#maxlength' => 1024,
+      '#size' => 80,
     );
 
-    $form['sources'] = array(
+    $form['jsonpath']['sources'] = array(
       '#type' => 'fieldset',
     );
 
@@ -135,19 +183,41 @@ class FeedsJSONPathParser extends FeedsParser {
           t('Fields <strong>!columns</strong> are mandatory and values in these columns are considered unique: only one entry per value in one of these columns will be created.',
             array('!columns' => implode(', ', $uniques)))),
       );
-      $form['sources']['help']['#value'] = '<div class="help">' . theme('item_list', $items) . '</div>';
+      $form['jsonpath']['sources']['help']['#markup'] = '<div class="help">' . theme('item_list', array('items' => $items)) . '</div>';
     }
 
     foreach ($mappings as $source => $target) {
-      $form['sources'][$source] = array(
-        '#type'          => 'textfield',
-        '#title'         => $target,
-        '#description'   => t('The JSONPath expression to run.'),
+      $form['jsonpath']['sources'][$source] = array(
+        '#type' => 'textfield',
+        '#title' => $target,
+        '#description' => t('The JSONPath expression to run.'),
         '#default_value' => isset($source_config['sources'][$source]) ? $source_config['sources'][$source] : '',
-        '#maxlength'     => 1024,
+        '#maxlength' => 1024,
+        '#size' => 80,
       );
     }
+    $form['jsonpath']['debug'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Debug'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['jsonpath']['debug']['options'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Debug query'),
+      '#options' => array_merge(array('context' => 'context'), $mappings),
+      '#default_value' => isset($source_config['debug']['options']) ? $source_config['debug']['options'] : array(),
+    );
+    return $form;
+  }
 
+  /**
+   * Override parent::configForm().
+   */
+  public function configForm(&$form_state) {
+    $form = $this->sourceForm($this->config);
+    $form['jsonpath']['context']['#required'] = FALSE;
+    $form['jsonpath']['#collapsed'] = FALSE;
     return $form;
   }
 
@@ -155,62 +225,90 @@ class FeedsJSONPathParser extends FeedsParser {
   * Override parent::getMappingSources().
   */
   public function getMappingSources() {
+    $mappings = $this->filterMappings(feeds_importer($this->id)->processor->config['mappings']);
+    $next = 0;
+    if (!empty($mappings)) {
+      $last_mapping = end(array_keys($mappings));
+      $next = explode(':', $last_mapping);
+      $next = $next[1] + 1;
+    }
     return array(
-      'jsonpath_parser:0' => array(
+      'jsonpath_parser:' . $next => array(
         'name' => t('JSONPath Expression'),
-        'description' => t('Allows you to configure an JSONPath expression that will populate this field.'),
+        'description' => t('Allows you to configure n JSONPath expression that will populate this field.'),
       ),
     ) + parent::getMappingSources();
+  }
+
+  public function sourceDefaults() {
+    return array();
   }
 
   /**
    * Define defaults.
    */
-  public function sourceDefaults() {
+  public function configDefaults() {
     return array(
       'context' => '',
       'sources' => array(),
+      'debug' => array(),
     );
   }
 
   /**
    * Override parent::sourceFormValidate().
    *
-   * Simply trims all JSONPath values from the form. That way when testing them
-   * later we can be sure that there aren't any strings with spaces in them.
+   * If the values of this source are the same as the base config we set them to
+   * blank to that the values will be inherited from the importer defaults.
    *
    * @param &$values
    *   The values from the form to validate, passed by reference.
    */
   public function sourceFormValidate(&$values) {
-    $values['context'] = trim($values['context']);
-    foreach ($values['sources'] as &$query) {
-        $query = trim($query);
+    $values = $values['jsonpath'];
+    asort($values);
+    asort($this->config);
+    if ($values === $this->config) {
+      $values = array();
+      return;
     }
+    $this->configFormValidate($values);
   }
-}
 
-/**
- * Implementation of hook_form_feeds_ui_mapping_form_alter().
- *
- * This is an interesting bit of work. Each source name has to be unique,
- * but we have no idea how many to create with getMappingSources() because we
- * don't know how many targets there are going to be.
- *
- * Solution is to keep track in the form how many have been added.
- */
-function feeds_jsonpath_parser_form_feeds_ui_mapping_form_alter(&$form, &$form_state) {
-  $newest_jsonpath_mapping = array();
-  foreach ($form['#mappings'] as $mapping) {
-    if (strpos($mapping['source'], 'jsonpath_parser:') === 0) {
-      $newest_jsonpath_mapping = $mapping;
+  /**
+   * Override parent::sourceFormValidate().
+   */
+  public function configFormValidate(&$values) {
+    if (isset($values['jsonpath'])) {
+      $values = $values['jsonpath'];
+    }
+    $values['context'] = trim($values['context']);
+    foreach ($values['sources'] as &$source) {
+      $source = trim($source);
     }
   }
-  if (!empty($newest_jsonpath_mapping)) {
-    list($a, $count) = explode(':', $newest_jsonpath_mapping['source']);
-    $default_source = $a . ':' . '0';
-    $label = $form['source']['#options'][$default_source];
-    unset($form['source']['#options'][$default_source]);
-    $form['source']['#options'][$a . ':' . ++$count] = $label;
+
+  /**
+   * Filters mappings, returning the ones that belong to us.
+   */
+  private function filterMappings($mappings) {
+    $our_mappings = array();
+    foreach ($mappings as $mapping) {
+      if (strpos($mapping['source'], 'jsonpath_parser:') === 0) {
+        $our_mappings[$mapping['source']] = $mapping['target'];
+      }
+    }
+    return $our_mappings;
+  }
+
+  private function debug($item, $source) {
+    if (in_array($source, $this->debug)) {
+      $o = '<ul>';
+      foreach ($item as $i) {
+        $o .= '<li>' . check_plain(var_export($i, TRUE)) . '</li>';
+      }
+      $o .= '</ul>';
+      drupal_set_message($source . ':' . $o);
+    }
   }
 }

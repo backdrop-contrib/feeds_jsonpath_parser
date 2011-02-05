@@ -2,12 +2,11 @@
 // $Id$
 
 /**
- * Implementation of hook_feeds_plugins().
+ * Implements hook_feeds_plugins().
  */
 function feeds_jsonpath_parser_feeds_plugins() {
   $path = drupal_get_path('module', 'feeds_jsonpath_parser');
   $info = array();
-
   $info['FeedsJSONPathParser'] = array(
     'name'        => t('JSONPath parser'),
     'description' => t('Parse JSON using JSONPath.'),
@@ -18,12 +17,11 @@ function feeds_jsonpath_parser_feeds_plugins() {
       'path'   => $path,
     ),
   );
-
   return $info;
 }
 
 /**
- * Implementation of hook_enable().
+ * Implements hook_enable().
  *
  * Clear Feed's plugin cache so that this plugin shows up.
  */

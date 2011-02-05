@@ -1,6 +1,7 @@
 ; $Id$
 name = Feeds JSONPath Parser
 description = Parse a JSON document using JSONPath.
+files[] = tests/feeds_jsonpath_parser.test
 package = Feeds
 dependencies[] = feeds
 core = 7.x
