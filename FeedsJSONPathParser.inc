@@ -171,7 +171,16 @@ class FeedsJSONPathParser extends FeedsParser {
       '#tree' => TRUE,
     );
     if (empty($mappings)) {
-      $form['jsonpath']['error_message']['#markup'] = t('FeedsJSONPathParser: No mappings were defined.');
+      // Detect if Feeds menu structure has changed. This will take a while to be
+      // released, but since I run dev it needs to work.
+      $feeds_menu = feeds_ui_menu();
+      if (isset($feeds_menu['admin/structure/feeds/list'])) {
+        $feeds_base = 'admin/structure/feeds/edit/';
+      }
+      else {
+        $feeds_base = 'admin/structure/feeds/';
+      }
+      $form['jsonpath']['error_message']['#markup'] = '<div class="help">' . t('No JSONPath mappings are defined. Define mappings !link.', array('!link' => l(t('here'), $feeds_base . $this->id . '/mapping'))) . '</div><br />';
       return $form;
     }
     $form['jsonpath']['context'] = array(
@@ -207,7 +216,11 @@ class FeedsJSONPathParser extends FeedsParser {
         '#size' => 80,
       );
       if (!empty($variables)) {
-        $form['jsonpath']['sources'][$source]['#description'] .= '<br />' . t('The variables ' . implode(', ', $variables) . ' are availliable for replacement.');
+        $variable_text = format_plural(count($variables),
+          t('The variable ' . implode(', ', $variables) . ' is availliable for replacement.'),
+          t('The variables ' . implode(', ', $variables) . ' are availliable for replacement.')
+        );
+        $form['jsonpath']['sources'][$source]['#description'] .= '<br />' . $variable_text;
       }
       $variables[] = '{' . $target . '}';
     }
