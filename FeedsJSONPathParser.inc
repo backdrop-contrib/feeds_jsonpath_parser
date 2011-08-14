@@ -2,7 +2,6 @@
 
 /**
  * @file
- *
  * Provides the Class for Feeds JSONPath Parser.
  */
 
@@ -10,9 +9,10 @@
  * Base class for the HTML and XML parsers.
  */
 class FeedsJSONPathParser extends FeedsParser {
+  protected $debug;
 
   /**
-   * Implementation of FeedsParser::parse().
+   * Implements FeedsParser::parse().
    */
   public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
     $mappings = $this->getOwnMappings();
@@ -39,36 +39,36 @@ class FeedsJSONPathParser extends FeedsParser {
     }
     unset($raw);
 
-    if (is_array($array)) {
-      require_once 'jsonpath-0.8.1.php';
+    if (!is_array($array)) {
+      throw new Exception(t('There was an error decoding the JSON document.'));
+    }
+    require_once 'jsonpath-0.8.1.php';
 
-      $all_items = $this->jsonPath($array, $source_config['context']);
-      $this->debug($all_items, 'context');
-      unset($array);
+    $all_items = $this->jsonPath($array, $source_config['context']);
+    unset($array);
+    $this->debug($all_items, 'context');
 
-      foreach ($all_items as $item) {
-        $parsed_item = $variables = array();
-        foreach ($source_config['sources'] as $source => $query) {
-          $parsed = $this->parseSourceElement($item, $query, $source);
-          // Avoid null values.
-          if (isset($parsed)) {
-            // Variable sunstitution can't handle arrays.
-            if (!is_array($parsed)) {
-              $variables['{' . $mappings[$source] . '}'] = $parsed;
-            }
-            else {
-              $variables['{' . $mappings[$source] . '}'] = '';
-            }
-            $parsed_item[$source] = $parsed;
+    foreach ($all_items as $item) {
+      $parsed_item = $variables = array();
+      foreach ($source_config['sources'] as $source => $query) {
+        // Variable substitution.
+        $query = strtr($query, $variables);
+        $parsed = $this->parseSourceElement($item, $query, $source);
+        // Avoid null values.
+        if (isset($parsed)) {
+          // Variable sunstitution can't handle arrays.
+          if (!is_array($parsed)) {
+            $variables['{' . $mappings[$source] . '}'] = $parsed;
           }
-        }
-        if (!empty($parsed_item)) {
-          $result->items[] = $parsed_item;
+          else {
+            $variables['{' . $mappings[$source] . '}'] = '';
+          }
+          $parsed_item[$source] = $parsed;
         }
       }
-    }
-    else {
-      throw new Exception(t('There was an error decoding the JSON document.'));
+      if (!empty($parsed_item)) {
+        $result->items[] = $parsed_item;
+      }
     }
     return $result;
   }
