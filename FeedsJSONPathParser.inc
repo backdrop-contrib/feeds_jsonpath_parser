@@ -15,8 +15,7 @@ class FeedsJSONPathParser extends FeedsParser {
    * Implementation of FeedsParser::parse().
    */
   public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
-    $mappings = $source->importer->processor->config['mappings'];
-    $mappings = $this->filterMappings($mappings);
+    $mappings = $this->getOwnMappings();
     $source_config = $source->getConfigFor($this);
     // Allow config inheritance.
     if (empty($source_config)) {
@@ -38,6 +37,7 @@ class FeedsJSONPathParser extends FeedsParser {
       $raw = '[' . $raw . ']';
       $array = json_decode(utf8_encode($raw), TRUE);
     }
+    unset($raw);
 
     if (is_array($array)) {
       require_once 'jsonpath-0.8.1.php';
@@ -62,7 +62,9 @@ class FeedsJSONPathParser extends FeedsParser {
             $parsed_item[$source] = $parsed;
           }
         }
-        $result->items[] = $parsed_item;
+        if (!empty($parsed_item)) {
+          $result->items[] = $parsed_item;
+        }
       }
     }
     else {
@@ -79,14 +81,16 @@ class FeedsJSONPathParser extends FeedsParser {
    *
    * @todo
    *   Firgure out error handling.
-   * @param $array
-   *   The input array to parse
-   * @$expression
+   *
+   * @param array $array
+   *   The input array to parse.
+   * @param string $expression
    *   The JSONPath expression.
+   *
    * @return array
-   *   Returns an array that is the output of jsonPath
+   *   Returns an array that is the output of jsonPath.
    */
-  private function jsonPath($array, $expression) {
+  protected function jsonPath($array, $expression) {
     $result = jsonPath($array, $expression);
     return ($result === FALSE) ? array() : $result;
   }
@@ -94,10 +98,13 @@ class FeedsJSONPathParser extends FeedsParser {
   /**
    * Parses one item from the context array.
    *
-   * @param $item
-   *   A PHP array.
-   * @param $query
+   * @param array $item
+   *   An array containing one item from the context.
+   * @param string $query
    *   A JSONPath query.
+   * @param string $source
+   *   The source element that corresponds to the query.
+   *
    * @return array
    *   An array containing the results of the query.
    */
@@ -131,6 +138,13 @@ class FeedsJSONPathParser extends FeedsParser {
     if (empty($source_config)) {
       $source_config = $this->config;
     }
+
+    if (isset($source_config['allow_override']) &&
+        !$source_config['allow_override'] &&
+        empty($source_config['config'])) {
+      return;
+    }
+
     // Add extensions that might get importerd.
     $fetcher = feeds_importer($this->id)->fetcher;
     if (isset($fetcher->config['allowed_extensions'])) {
@@ -216,9 +230,17 @@ class FeedsJSONPathParser extends FeedsParser {
    * Override parent::configForm().
    */
   public function configForm(&$form_state) {
-    $form = $this->sourceForm($this->config);
+    $config = $this->getConfig();
+    $config['config'] = TRUE;
+    $form = $this->sourceForm($config);
     $form['jsonpath']['context']['#required'] = FALSE;
     $form['jsonpath']['#collapsed'] = FALSE;
+    $form['jsonpath']['allow_override'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow source configuration override'),
+      '#description' => t('This setting allows feed nodes to specify their own JSONPath values for the context and sources.'),
+      '#default_value' => $config['allow_override'],
+    );
     return $form;
   }
 
@@ -226,10 +248,11 @@ class FeedsJSONPathParser extends FeedsParser {
   * Override parent::getMappingSources().
   */
   public function getMappingSources() {
-    $mappings = $this->filterMappings(feeds_importer($this->id)->processor->config['mappings']);
+    $mappings = $this->getOwnMappings();
     $next = 0;
     if (!empty($mappings)) {
-      $last_mapping = end(array_keys($mappings));
+      $keys = array_keys($mappings);
+      $last_mapping = end($keys);
       $next = explode(':', $last_mapping);
       $next = $next[1] + 1;
     }
@@ -253,6 +276,7 @@ class FeedsJSONPathParser extends FeedsParser {
       'context' => '',
       'sources' => array(),
       'debug' => array(),
+      'allow_override' => FALSE,
     );
   }
 
@@ -266,10 +290,13 @@ class FeedsJSONPathParser extends FeedsParser {
    *   The values from the form to validate, passed by reference.
    */
   public function sourceFormValidate(&$values) {
+    $config = $this->getConfig();
     $values = $values['jsonpath'];
-    asort($values);
-    asort($this->config);
-    if ($values === $this->config) {
+    $allow_override = $config['allow_override'];
+    unset($config['allow_override']);
+    ksort($values);
+    ksort($config);
+    if ($values === $config || !$allow_override) {
       $values = array();
       return;
     }
@@ -290,9 +317,27 @@ class FeedsJSONPathParser extends FeedsParser {
   }
 
   /**
-   * Filters mappings, returning the ones that belong to us.
+   * Get the mappings that belong to us i.e. mappings that begin with
+   * "jsonpath_parser:".
+   *
+   * @return array
+   *   An array of mappings keyed source => target.
    */
-  private function filterMappings($mappings) {
+  protected function getOwnMappings() {
+    $importer_config = feeds_importer($this->id)->getConfig();
+    return $this->filterMappings($importer_config['processor']['config']['mappings']);
+  }
+
+  /**
+   * Filters mappings, returning the ones that belong to us.
+   *
+   * @param array $mappings
+   *   A mapping array from a processor.
+   *
+   * @return array
+   *   An array of mappings keyed source => target.
+   */
+  protected function filterMappings($mappings) {
     $our_mappings = array();
     foreach ($mappings as $mapping) {
       if (strpos($mapping['source'], 'jsonpath_parser:') === 0) {
@@ -302,7 +347,7 @@ class FeedsJSONPathParser extends FeedsParser {
     return $our_mappings;
   }
 
-  private function debug($item, $source) {
+  protected function debug($item, $source) {
     if (in_array($source, $this->debug)) {
       $o = '<ul>';
       foreach ($item as $i) {
