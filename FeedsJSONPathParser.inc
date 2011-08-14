@@ -207,7 +207,7 @@ class FeedsJSONPathParser extends FeedsParser {
         '#size' => 80,
       );
       if (!empty($variables)) {
-        $form['jsonpath']['sources'][$source]['#description'] .= '<br>' . t('The variables '. implode(', ', $variables). ' are availliable for replacement.');
+        $form['jsonpath']['sources'][$source]['#description'] .= '<br />' . t('The variables ' . implode(', ', $variables) . ' are availliable for replacement.');
       }
       $variables[] = '{' . $target . '}';
     }

@@ -71,7 +71,7 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
     $this->postAndCheck($edit_url, $edit, 'Save', 'Your changes have been saved.');
 
     // Test import.
-    $path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'feeds_jsonpath_parser') .'/tests/feeds_jsonpath_parser/';
+    $path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'feeds_jsonpath_parser') . '/tests/feeds_jsonpath_parser/';
     $nid = $this->createFeedNode('jsonpath', $path . 'test.json', 'Testing JSONPath Parser');
     $this->assertText('Created 4 nodes');
 
