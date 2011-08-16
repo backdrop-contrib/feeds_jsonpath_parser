@@ -13,7 +13,7 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
   /**
    * Describe this test.
    */
-  public function getInfo() {
+  public static function getInfo() {
     return array(
       'name' => t('JSONPath Parser'),
       'description' => t('Regression tests for Feeds JSONPath parser.'),
