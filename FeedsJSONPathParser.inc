@@ -75,7 +75,7 @@ class FeedsJSONPathParser extends FeedsParser {
   }
 
   /**
-   * Utilizes the jsonPath function from jsonpath-0.8.1.php
+   * Utilizes the jsonPath function from jsonpath-0.8.1.php.
    *
    * jsonPath returns false if the expression returns zero results and that will
    * mess up our for loops, so return an empty array instead.
@@ -117,10 +117,9 @@ class FeedsJSONPathParser extends FeedsParser {
     $this->debug($results, $source);
     unset($item);
 
-    /**
-     * If there is one result, return it directly.  If there are no results,
-     * return. Otherwise return the results.
-     */
+
+    // If there is one result, return it directly.  If there are no results,
+    // return. Otherwise return the results.
     if (count($results) === 1) {
       return $results[0];
     }
@@ -172,8 +171,8 @@ class FeedsJSONPathParser extends FeedsParser {
       '#tree' => TRUE,
     );
     if (empty($mappings)) {
-      // Detect if Feeds menu structure has changed. This will take a while to be
-      // released, but since I run dev it needs to work.
+      // Detect if Feeds menu structure has changed. This will take a while to
+      // be released, but since I run dev it needs to work.
       $feeds_menu = feeds_ui_menu();
       if (isset($feeds_menu['admin/structure/feeds/list'])) {
         $feeds_base = 'admin/structure/feeds/edit/';
@@ -218,8 +217,8 @@ class FeedsJSONPathParser extends FeedsParser {
       );
       if (!empty($variables)) {
         $variable_text = format_plural(count($variables),
-          t('The variable ' . implode(', ', $variables) . ' is availliable for replacement.'),
-          t('The variables ' . implode(', ', $variables) . ' are availliable for replacement.')
+          t('The variable %v is availliable for replacement.', array('%v' => $variables)),
+          t('The variables %v are availliable for replacement.', array('%v' => implode(', ', $variables)))
         );
         $form['jsonpath']['sources'][$source]['#description'] .= '<br />' . $variable_text;
       }
@@ -259,21 +258,27 @@ class FeedsJSONPathParser extends FeedsParser {
   }
 
   /**
-  * Override parent::getMappingSources().
-  */
+   * Override parent::getMappingSources().
+   */
   public function getMappingSources() {
-    $mappings = $this->getOwnMappings();
+    $mappings = $this->filterMappings(feeds_importer($this->id)->processor->config['mappings']);
     $next = 0;
     if (!empty($mappings)) {
       $keys = array_keys($mappings);
-      $last_mapping = end($keys);
-      $next = explode(':', $last_mapping);
-      $next = $next[1] + 1;
+
+      $nums = array();
+      foreach ($keys as $key) {
+        list(, $num) = explode(':', $key);
+        $nums[] = $num;
+      }
+
+      $max = max($nums);
+      $next = ++$max;
     }
     return array(
       'jsonpath_parser:' . $next => array(
         'name' => t('JSONPath Expression'),
-        'description' => t('Allows you to configure n JSONPath expression that will populate this field.'),
+        'description' => t('Allows you to configure a JSONPath expression that will populate this field.'),
       ),
     ) + parent::getMappingSources();
   }
@@ -300,7 +305,7 @@ class FeedsJSONPathParser extends FeedsParser {
    * If the values of this source are the same as the base config we set them to
    * blank to that the values will be inherited from the importer defaults.
    *
-   * @param &$values
+   * @param array $values
    *   The values from the form to validate, passed by reference.
    */
   public function sourceFormValidate(&$values) {
@@ -331,8 +336,7 @@ class FeedsJSONPathParser extends FeedsParser {
   }
 
   /**
-   * Get the mappings that belong to us i.e. mappings that begin with
-   * "jsonpath_parser:".
+   * Gets the mappings that belong to this parser.
    *
    * @return array
    *   An array of mappings keyed source => target.
