@@ -9,7 +9,7 @@
  * Base class for the HTML and XML parsers.
  */
 class FeedsJSONPathParser extends FeedsParser {
-  protected $debug;
+  protected $debug = array();
 
   /**
    * Implements FeedsParser::parse().
@@ -158,7 +158,7 @@ class FeedsJSONPathParser extends FeedsParser {
     foreach ($mappings_ as $mapping) {
       if (strpos($mapping['source'], 'jsonpath_parser:') === 0) {
         $mappings[$mapping['source']] = $mapping['target'];
-        if ($mapping['unique']) {
+        if (!empty($mapping['unique'])) {
           $uniques[] = $mapping['target'];
         }
       }
