@@ -217,8 +217,8 @@ class FeedsJSONPathParser extends FeedsParser {
       );
       if (!empty($variables)) {
         $variable_text = format_plural(count($variables),
-          t('The variable %v is availliable for replacement.', array('%v' => implode(', ', $variables))),
-          t('The variables %v are availliable for replacement.', array('%v' => implode(', ', $variables)))
+          t('The variable %v is available for replacement.', array('%v' => implode(', ', $variables))),
+          t('The variables %v are available for replacement.', array('%v' => implode(', ', $variables)))
         );
         $form['jsonpath']['sources'][$source]['#description'] .= '<br />' . $variable_text;
       }
