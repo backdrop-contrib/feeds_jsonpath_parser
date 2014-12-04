@@ -34,7 +34,7 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
    */
   protected function downloadJsonPath() {
     // We don't use a variable_set() here since we want this to be a unit test.
-    if (defined('FEEDS_JSONPATH_LIBRARY_PATH')) {
+    if (variable_get('feeds_jsonpath_library_dir')) {
       return;
     }
     $url = 'https://jsonpath.googlecode.com/svn/trunk/src/php/jsonpath.php';
@@ -74,7 +74,7 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
     $this->assertTrue(file_exists($local_file), format_string('@file found.', array('@file' => $local_file)));
 
     // Set the library directory.
-    define('FEEDS_JSONPATH_LIBRARY_PATH', $library_dir);
+    variable_set('feeds_jsonpath_library_dir', $jsonpath_library_dir);
   }
 
   /**

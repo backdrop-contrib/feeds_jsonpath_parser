@@ -47,8 +47,8 @@ function feeds_jsonpath_parser_library_path() {
     $path = 'sites/all/libraries/jsonpath';
   }
   // This is defined when simpletest downloads the library for us.
-  elseif (defined('FEEDS_JSONPATH_LIBRARY_PATH')) {
-    $path = FEEDS_JSONPATH_LIBRARY_PATH . '/jsonpath';
+  elseif (variable_get('feeds_jsonpath_library_dir')) {
+    $path = variable_get('feeds_jsonpath_library_dir');
   }
 
   if (!isset($path)) {
