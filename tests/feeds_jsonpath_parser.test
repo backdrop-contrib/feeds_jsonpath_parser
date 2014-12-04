@@ -26,15 +26,6 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
    */
   public function setUp() {
     parent::setUp(array('feeds_jsonpath_parser'));
-    // Detect if Feeds menu structure has changed. This will take a while to be
-    // released, but since I run dev it needs to work.
-    $feeds_menu = feeds_ui_menu();
-    if (isset($feeds_menu['admin/structure/feeds/list'])) {
-      $this->feeds_base = 'admin/structure/feeds/edit';
-    }
-    else {
-      $this->feeds_base = 'admin/structure/feeds';
-    }
   }
 
   /**
@@ -65,14 +56,14 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
       'jsonpath[sources][jsonpath_parser:1]' => 'price',
       'jsonpath[allow_override]' => TRUE,
     );
-    $edit_url = $this->feeds_base . '/jsonpath/settings/FeedsJSONPathParser';
+    $edit_url = 'admin/structure/feeds/jsonpath/settings/FeedsJSONPathParser';
     $node_save_text = 'Basic page Testing JSONPath Parser has been updated.';
 
     $this->postAndCheck($edit_url, $edit, 'Save', 'Your changes have been saved.');
 
     // Test import.
-    $path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'feeds_jsonpath_parser') . '/tests/feeds_jsonpath_parser/';
-    $nid = $this->createFeedNode('jsonpath', $path . 'test.json', 'Testing JSONPath Parser');
+    $path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'feeds_jsonpath_parser') . '/tests/feeds_jsonpath_parser';
+    $nid = $this->createFeedNode('jsonpath', $path . '/test.json', 'Testing JSONPath Parser');
     $this->assertText('Created 4 nodes');
 
     // Import again, this verifies url field was mapped correctly.
@@ -133,7 +124,7 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
     $this->assertNoText('JSONPath Parser Settings');
   }
 
-  function postAndCheck($url, $edit, $button, $saved_text) {
+  public function postAndCheck($url, $edit, $button, $saved_text) {
     $this->drupalPost($url, $edit, $button);
     $this->assertText($saved_text);
     $this->drupalGet($url);
@@ -141,4 +132,5 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
       $this->assertFieldByName($key, $value);
     }
   }
+
 }

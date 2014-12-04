@@ -2,13 +2,19 @@
 
 /**
  * @file
- * Provides the Class for Feeds JSONPath Parser.
+ * Contains FeedsJSONPathParser.
  */
 
 /**
- * Base class for the HTML and XML parsers.
+ * Parses JSON using JSONPath.
  */
 class FeedsJSONPathParser extends FeedsParser {
+
+  /**
+   * The source fields to debug.
+   *
+   * @var array
+   */
   protected $debug = array();
 
   /**
@@ -47,6 +53,21 @@ class FeedsJSONPathParser extends FeedsParser {
 
     $all_items = $this->jsonPath($array, $source_config['context']);
     unset($array);
+
+    // Batch.
+    $state = $source->state(FEEDS_PARSE);
+    if (!$state->total) {
+      $state->total = count($all_items);
+    }
+
+    $start = (int) $state->pointer;
+    $state->pointer = $start + $source->importer->getLimit();
+    $all_items = array_slice($all_items, $start, $source->importer->getLimit());
+
+    // Set progress state.
+    $state->progress($state->total, $state->pointer);
+
+    // Debug output.
     $this->debug($all_items, 'context');
 
     foreach ($all_items as $item) {
@@ -80,9 +101,6 @@ class FeedsJSONPathParser extends FeedsParser {
    * jsonPath returns false if the expression returns zero results and that will
    * mess up our for loops, so return an empty array instead.
    *
-   * @todo
-   *   Firgure out error handling.
-   *
    * @param array $array
    *   The input array to parse.
    * @param string $expression
@@ -90,6 +108,9 @@ class FeedsJSONPathParser extends FeedsParser {
    *
    * @return array
    *   Returns an array that is the output of jsonPath.
+   *
+   * @todo
+   *   Firgure out error handling.
    */
   protected function jsonPath($array, $expression) {
     $result = jsonPath($array, $expression);
@@ -375,4 +396,5 @@ class FeedsJSONPathParser extends FeedsParser {
       drupal_set_message($source . ':' . $o);
     }
   }
+
 }
