@@ -48,8 +48,7 @@ class FeedsJSONPathParser extends FeedsParser {
     if (!is_array($array)) {
       throw new Exception(t('There was an error decoding the JSON document.'));
     }
-    $files = glob(dirname(__FILE__) . '/jsonpath*.php');
-    require_once reset($files);
+    require_once feeds_jsonpath_parser_library_path();
 
     $all_items = $this->jsonPath($array, $source_config['context']);
     unset($array);
