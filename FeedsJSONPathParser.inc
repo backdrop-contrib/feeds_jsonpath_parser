@@ -11,6 +11,13 @@
 class FeedsJSONPathParser extends FeedsParser {
 
   /**
+   * A regular expression that finds four byte UTF-8 chars.
+   *
+   * @var string
+   */
+  protected static $fourByteRegex = '/(?:\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2})/s';
+
+  /**
    * The source fields to debug.
    *
    * @var array
@@ -136,17 +143,22 @@ class FeedsJSONPathParser extends FeedsParser {
     }
     $results = $this->jsonPath($item, $query);
     $this->debug($results, $source);
-    unset($item);
 
-
-    // If there is one result, return it directly.  If there are no results,
-    // return. Otherwise return the results.
-    if (count($results) === 1) {
-      return $results[0];
-    }
-    if (count($results) === 0) {
+    $count = count($results);
+    if ($count === 0) {
       return;
     }
+
+    foreach ($results as $delta => $value) {
+      if (is_string($value) && $value !== '') {
+        $results[$delta] = !empty($this->config['convert_four_byte']) ? $this->convertFourBytes($value) : $this->stripFourBytes($value);
+      }
+    }
+
+    if ($count === 1) {
+      return reset($results);
+    }
+
     return $results;
   }
 
@@ -275,6 +287,13 @@ class FeedsJSONPathParser extends FeedsParser {
       '#description' => t('This setting allows feed nodes to specify their own JSONPath values for the context and sources.'),
       '#default_value' => $config['allow_override'],
     );
+    $form['jsonpath']['convert_four_byte'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Convert four byte characters'),
+      '#description' => t('Coverts four byte UTF-8 characters to their HTML entity. By default, four byte characters will be stripped.'),
+      '#default_value' => !empty($config['convert_four_byte']),
+    );
+
     return $form;
   }
 
@@ -317,6 +336,7 @@ class FeedsJSONPathParser extends FeedsParser {
       'sources' => array(),
       'debug' => array(),
       'allow_override' => FALSE,
+      'convert_four_byte' => FALSE,
     );
   }
 
@@ -334,6 +354,7 @@ class FeedsJSONPathParser extends FeedsParser {
     $values = $values['jsonpath'];
     $allow_override = $config['allow_override'];
     unset($config['allow_override']);
+    unset($config['convert_four_byte']);
     ksort($values);
     ksort($config);
     if ($values === $config || !$allow_override) {
@@ -350,9 +371,12 @@ class FeedsJSONPathParser extends FeedsParser {
     if (isset($values['jsonpath'])) {
       $values = $values['jsonpath'];
     }
-    $values['context'] = trim($values['context']);
-    foreach ($values['sources'] as &$source) {
-      $source = trim($source);
+
+    $values['context'] = isset($values['context']) ? trim($values['context']) : '';
+    if (!empty($values['sources'])) {
+      foreach ($values['sources'] as &$source) {
+        $source = trim($source);
+      }
     }
   }
 
@@ -414,6 +438,53 @@ class FeedsJSONPathParser extends FeedsParser {
         return TRUE;
       }
     }
+  }
+
+  /**
+   * Strips four byte characters from a string.
+   *
+   * @param string $string
+   *   The input string.
+   *
+   * @return string
+   *   The string with four byte characters removed.
+   */
+  public static function stripFourBytes($string) {
+    return preg_replace(self::$fourByteRegex, '', $string);
+  }
+
+  /**
+   * Replaces four byte characters with their HTML unicode codepoint.
+   *
+   * @param string $string
+   *   The input string.
+   *
+   * @return string
+   *   The string with four byte characters converted.
+   */
+  public static function convertFourBytes($string) {
+    return preg_replace_callback(self::$fourByteRegex, array('FeedsJSONPathParser', 'doFourByteReplace'), $string);
+  }
+
+  /**
+   * Callback for FeedsJSONPathParser::convertFourBytes().
+   *
+   * @param array $matches
+   *   The regular expression matches.
+   *
+   * @return string
+   *   A four byte unicode character converted to its HTML representation.
+   */
+  public static function doFourByteReplace(array $matches) {
+    $char = $matches[0];
+
+    // Calculate the codepoint of the character.
+    $codepoint = ord($char[0]) - 0xF0 << 18;
+    $codepoint += ord($char[1]) - 0x80 << 12;
+    $codepoint += ord($char[2]) - 0x80 << 6;
+    $codepoint += ord($char[3]) - 0x80;
+
+    return '&#' . $codepoint . ';';
   }
 
 }
