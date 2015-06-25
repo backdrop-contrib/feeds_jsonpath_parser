@@ -42,15 +42,14 @@ class FeedsJSONPathParser extends FeedsParser {
     $fetcher_config = $source->getConfigFor($source->importer->fetcher);
     $result->link = $fetcher_config['source'];
 
-    $array = json_decode(utf8_encode($raw), TRUE);
+    $array = json_decode($raw, TRUE);
 
     // Support JSON lines format.
     if (!is_array($array)) {
       $raw = preg_replace('/}\s*{/', '},{', $raw);
       $raw = '[' . $raw . ']';
-      $array = json_decode(utf8_encode($raw), TRUE);
+      $array = json_decode($raw, TRUE);
     }
-    unset($raw);
 
     if (!is_array($array)) {
       throw new Exception(t('There was an error decoding the JSON document.'));
