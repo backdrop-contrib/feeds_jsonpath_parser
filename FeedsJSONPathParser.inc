@@ -70,21 +70,22 @@ class FeedsJSONPathParser extends FeedsParser {
     $this->debug($all_items, 'context');
 
     foreach ($all_items as $item) {
+      // Invoke a hook to check whether the item should be skipped.
+      if ($this->invokeHook($item, $source) === TRUE) {
+        continue;
+      }
+
       $parsed_item = $variables = array();
-      foreach ($source_config['sources'] as $source => $query) {
+      foreach ($source_config['sources'] as $source_key => $query) {
         // Variable substitution.
         $query = strtr($query, $variables);
-        $parsed = $this->parseSourceElement($item, $query, $source);
+        $parsed = $this->parseSourceElement($item, $query, $source_key);
+
+        $variables['{' . $mappings[$source_key] . '}'] = is_array($parsed) ? reset($parsed) : $parsed;
+
         // Avoid null values.
         if (isset($parsed)) {
-          // Variable sunstitution can't handle arrays.
-          if (!is_array($parsed)) {
-            $variables['{' . $mappings[$source] . '}'] = $parsed;
-          }
-          else {
-            $variables['{' . $mappings[$source] . '}'] = '';
-          }
-          $parsed_item[$source] = $parsed;
+          $parsed_item[$source_key] = $parsed;
         }
       }
       if (!empty($parsed_item)) {
@@ -393,6 +394,25 @@ class FeedsJSONPathParser extends FeedsParser {
       }
       $o .= '</ul>';
       drupal_set_message($source . ':' . $o);
+    }
+  }
+
+  /**
+   * Calls our filter hook.
+   *
+   * @param array &$item
+   *   The item to alter.
+   * @param FeedsSource $source
+   *   The feed source.
+   * @return true|null
+   *   Returns true if the item should be skipped.
+   */
+  protected function invokeHook(array &$item, FeedsSource $source) {
+    foreach (module_implements('feeds_jsonpath_parser_filter') as $module) {
+      $function = $module . '_feeds_jsonpath_parser_filter';
+      if ($function($item, $source) === TRUE) {
+        return TRUE;
+      }
     }
   }
 
