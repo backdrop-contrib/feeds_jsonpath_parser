@@ -1,7 +1,7 @@
 name = JSONPath Parser
 description = Parse a JSON document using JSONPath.
-files[] = tests/feeds_jsonpath_parser.test
-files[] = FeedsJSONPathParser.inc
-package = Feeds
+backdrop = 1.x
+type = module
 dependencies[] = feeds
-core = 7.x
+package = Feeds
+

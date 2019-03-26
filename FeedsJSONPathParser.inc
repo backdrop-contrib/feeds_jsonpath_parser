@@ -1,12 +1,7 @@
 <?php
-
 /**
  * @file
- * Contains FeedsJSONPathParser.
- */
-
-/**
- * Parses JSON using JSONPath.
+ * Extends FeedsParser class to add JSONPath parsing.
  */
 class FeedsJSONPathParser extends FeedsParser {
 
@@ -54,7 +49,7 @@ class FeedsJSONPathParser extends FeedsParser {
     if (!is_array($array)) {
       throw new Exception(t('There was an error decoding the JSON document.'));
     }
-    require_once feeds_jsonpath_parser_library_path();
+    require_once backdrop_get_path('module', 'feeds_jsonpath_parser') . '/jsonpath/jsonpath.php';
 
     $all_items = $this->jsonPath($array, $source_config['context']);
     unset($array);
@@ -416,7 +411,7 @@ class FeedsJSONPathParser extends FeedsParser {
         $o .= '<li>' . check_plain(var_export($i, TRUE)) . '</li>';
       }
       $o .= '</ul>';
-      drupal_set_message($source . ':' . $o);
+      backdrop_set_message($source . ':' . $o);
     }
   }
 
@@ -487,3 +482,4 @@ class FeedsJSONPathParser extends FeedsParser {
   }
 
 }
+
