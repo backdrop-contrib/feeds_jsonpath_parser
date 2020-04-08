@@ -24,7 +24,7 @@ https://github.com/backdrop-contrib/feeds_jsonpath_parser/issues.
 Current Maintainers
 -------------------
 
-- Peter Anderson (https://github.com/BWPanda).
+- Looking for maintainer(s)...
 
 Credits
 -------
