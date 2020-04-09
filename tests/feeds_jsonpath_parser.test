@@ -64,14 +64,14 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
 
     // Test that overriding default settings works.
     $edit = array(
-      'feeds[FeedsJSONPathParser][jsonpath][context]' => '/foo',
+      'feeds[FeedsJSONPathParser][jsonpath][context]' => '$.foo',
       'feeds[FeedsJSONPathParser][jsonpath][sources][jsonpath_parser:0]' => 'bar',
       'feeds[FeedsJSONPathParser][jsonpath][sources][jsonpath_parser:1]' => 'baz',
     );
     $this->postAndCheck('node/' . $nid . '/edit', $edit, 'Save', $node_save_text);
 
-    // Assert the we don't create an empty node when JSONPath values don't return anything.
-    // That happened at one point.
+    // Assert the we don't create an empty node when JSONPath values don't
+    // return anything. That happened at one point.
     $this->backdropPost('node/' . $nid . '/import', array(), 'Import');
     $this->assertText('There are no new nodes');
 
@@ -112,10 +112,26 @@ class FeedsJSONPathParserTestCase extends FeedsWebTestCase {
     $this->assertEqual('ࡇ abc ʦ ', FeedsJSONPathParser::stripFourBytes('ࡇ abc ʦ 𡃁'));
   }
 
+  /**
+   * Submit a form and confirm the expected fields are present.
+   */
   public function postAndCheck($url, $edit, $button, $saved_text) {
-    $this->backdropPost($url, $edit, $button);
-    $this->assertText($saved_text);
+    // Request the page and confirm it loads correctly.
     $this->backdropGet($url);
+    $this->assertResponse(200);
+
+    // Submit data to the form.
+    $this->backdropPost(NULL, $edit, $button);
+
+    // Confirm the expected string was found on the form.
+    $this->assertText($saved_text);
+
+    // Reload the form.
+    $this->backdropGet($url);
+
+    // Confirm each of the fields is present on the form and has the expected
+    // values.
+
     foreach ($edit as $key => $value) {
       $this->assertFieldByName($key, $value);
     }
