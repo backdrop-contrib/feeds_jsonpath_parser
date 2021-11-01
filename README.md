@@ -24,8 +24,7 @@ https://github.com/backdrop-contrib/feeds_jsonpath_parser/issues.
 Current Maintainers
 -------------------
 
-- [Jen Lampton](https://github.com/jenlampton)
-- Seeking additional maintainers.
+- Looking for maintainer(s)...
 
 Credits
 -------
