@@ -72,6 +72,7 @@ function feeds_jsonpath_parser_feeds_plugins() {
       'name' => t('JSONPath parser'),
       'description' => t('Parse JSON files using JSONPath.'),
       'handler' => array(
+        'module' => 'feeds_jsonpath_parser',
         'parent' => 'FeedsParser',
         'class' => 'FeedsJSONPathParser',
         'file' => 'FeedsJSONPathParser.inc',
