@@ -24,13 +24,14 @@ https://github.com/backdrop-contrib/feeds_jsonpath_parser/issues.
 Current Maintainers
 -------------------
 
-- Looking for maintainer(s)...
+- [Jen Lampton](https://github.com/jenlampton)
+- Looking for co-maintainers
 
 Credits
 -------
 
-- Ported to Backdrop CMS by Peter Anderson (https://github.com/BWPanda).
-- Originally written for Drupal by Chris Leppanen (https://www.drupal.org/u/twistor).
+- Ported to Backdrop CMS by [Peter Anderson](https://github.com/BWPanda).
+- Originally written for Drupal by [Chris Leppanen](https://www.drupal.org/u/twistor).
 
 License
 -------
