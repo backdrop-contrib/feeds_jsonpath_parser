@@ -5,7 +5,7 @@ JSONPath Parser is a Feeds parser that allows parsing JSON files using the
 JSONPath library. It is very similar to the Feeds XPath Parser module.
 
 Documentation for JSONPath can be seen here:
-https://github.com/FlowCommunications/JSONPath
+https://github.com/SoftCreatR/JSONPath
 
 Installation
 ------------
