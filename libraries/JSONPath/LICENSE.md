@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2018 Flow Communications
+Original work - Copyright (c) 2018 Flow Communications
+Modified work - Copyright (c) 2020 Sascha Greuel <hello@1-2.dev>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

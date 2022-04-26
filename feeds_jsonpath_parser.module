@@ -7,7 +7,7 @@
 /**
  * Defines which commit to checkout from flow/jsonpath.
  */
-define('FEEDS_JSONPATH_PARSER_LIBRARY_VERSION', '0.5.0');
+define('FEEDS_JSONPATH_PARSER_LIBRARY_VERSION', '0.8.0');
 
 /**
  * Implements hook_autoload_info().
@@ -40,8 +40,8 @@ function feeds_jsonpath_parser_libraries_info() {
   $libraries = array();
   $libraries['jsonpath'] = array(
     'name' => 'JSONPath',
-    'vendor url' => 'https://github.com/FlowCommunications/JSONPath',
-    'download url' => 'https://github.com/FlowCommunications/JSONPath/archive/' . FEEDS_JSONPATH_PARSER_LIBRARY_VERSION . '.tar.gz',
+    'vendor url' => 'https://github.com/SoftCreatR/JSONPath',
+    'download url' => 'https://github.com/SoftCreatR/JSONPath/archive/' . FEEDS_JSONPATH_PARSER_LIBRARY_VERSION . '.tar.gz',
     'version' => FEEDS_JSONPATH_PARSER_LIBRARY_VERSION,
     'xautoload' => '_feeds_jsonpath_parser_xautoload_callback',
   );
