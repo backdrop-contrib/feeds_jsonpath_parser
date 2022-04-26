@@ -37,12 +37,12 @@ function feeds_jsonpath_parser_requirements($phase) {
     if (module_exists('libraries') && file_exists(libraries_get_path('jsonpath') . '/jsonpath.php')) {
       $message = $t('To remain secure because of issues identified in <a href="https://www.drupal.org/sa-contrib-2019-083">SA-CONTRIB-2019-083</a>, you must remove goessner/jsonpath and replace it with flow/jsonpath.');
     }
-    if ($phase === 'runtime' || (module_exists('libraries') && !file_exists(libraries_get_path('jsonpath') . '/src/Flow/JSONPath/JSONPath.php'))) {
+    if ($phase === 'runtime' || (module_exists('libraries') && !file_exists(libraries_get_path('jsonpath') . '/src/JSONPath.php'))) {
       $requirements['feeds_jsonpath_parser']['severity'] = REQUIREMENT_ERROR;
       $requirements['feeds_jsonpath_parser']['description'] = $message . ' ' . $t('The <a href="@jsonpath">JSONPath</a> library is missing. Download <a href="@download">@download</a> and place the contents of JSONPath-@version in sites/all/libraries/jsonpath and enable the modules "libraries" and "xautoload".', array(
-        '@jsonpath' => 'https://github.com/FlowCommunications/JSONPath',
+        '@jsonpath' => 'https://github.com/SoftCreatR/JSONPath',
         '@version' => FEEDS_JSONPATH_PARSER_LIBRARY_VERSION,
-        '@download' => 'https://github.com/FlowCommunications/JSONPath/archive/' . FEEDS_JSONPATH_PARSER_LIBRARY_VERSION . '.tar.gz',
+        '@download' => 'https://github.com/SoftCreatR/JSONPath/archive/' . FEEDS_JSONPATH_PARSER_LIBRARY_VERSION . '.tar.gz',
       ));
       $requirements['feeds_jsonpath_parser']['value'] = $t('Not installed');
     }

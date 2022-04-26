@@ -1,27 +1,40 @@
 <?php
+
+/**
+ * JSONPath implementation for PHP.
+ *
+ * @license https://github.com/SoftCreatR/JSONPath/blob/main/LICENSE  MIT License
+ */
+
+declare(strict_types=1);
+
 namespace Flow\JSONPath;
 
 use ArrayAccess;
 use Countable;
 use Iterator;
 use JsonSerializable;
-use Flow\JsonPath\Filters\AbstractFilter;
+
+use function array_merge;
+use function count;
+use function crc32;
+use function current;
+use function end;
+use function key;
+use function next;
+use function reset;
 
 class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
 {
-    protected static $tokenCache = [];
+    public const ALLOW_MAGIC = true;
 
-    protected $data;
+    protected static array $tokenCache = [];
 
-    protected $options;
+    protected mixed $data = [];
 
-    const ALLOW_MAGIC = 1;
+    protected bool $options = false;
 
-    /**
-     * @param $data
-     * @param int $options
-     */
-    public function __construct($data, $options = 0)
+    final public function __construct(mixed $data = [], bool $options = false)
     {
         $this->data = $data;
         $this->options = $options;
@@ -30,39 +43,37 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
     /**
      * Evaluate an expression
      *
-     * @param $expression
-     * @return static
      * @throws JSONPathException
+     *
+     * @return static
      */
-    public function find($expression)
+    public function find(string $expression): self
     {
         $tokens = $this->parseTokens($expression);
-
         $collectionData = [$this->data];
 
         foreach ($tokens as $token) {
+            /** @var JSONPathToken $token */
             $filter = $token->buildFilter($this->options);
-
-            $filteredData = [];
+            $filteredDataList = [];
 
             foreach ($collectionData as $value) {
                 if (AccessHelper::isCollectionType($value)) {
-                    $filteredValue = $filter->filter($value);
-                    $filteredData = array_merge($filteredData, $filteredValue);
+                    $filteredDataList[] = $filter->filter($value);
                 }
             }
 
-            $collectionData = $filteredData;
+            if (!empty($filteredDataList)) {
+                $collectionData = array_merge(...$filteredDataList);
+            } else {
+                $collectionData = [];
+            }
         }
-
 
         return new static($collectionData, $this->options);
     }
 
-    /**
-     * @return mixed
-     */
-    public function first()
+    public function first(): mixed
     {
         $keys = AccessHelper::collectionKeys($this->data);
 
@@ -70,16 +81,15 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
             return null;
         }
 
-        $value = isset($this->data[$keys[0]]) ? $this->data[$keys[0]] : null;
+        $value = $this->data[$keys[0]] ?? null;
 
         return AccessHelper::isCollectionType($value) ? new static($value, $this->options) : $value;
     }
 
     /**
      * Evaluate an expression and return the last result
-     * @return mixed
      */
-    public function last()
+    public function last(): mixed
     {
         $keys = AccessHelper::collectionKeys($this->data);
 
@@ -87,16 +97,15 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
             return null;
         }
 
-        $value = $this->data[end($keys)] ? $this->data[end($keys)] : null;
+        $value = $this->data[end($keys)] ?: null;
 
         return AccessHelper::isCollectionType($value) ? new static($value, $this->options) : $value;
     }
 
     /**
      * Evaluate an expression and return the first key
-     * @return mixed
      */
-    public function firstKey()
+    public function firstKey(): mixed
     {
         $keys = AccessHelper::collectionKeys($this->data);
 
@@ -109,9 +118,8 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
 
     /**
      * Evaluate an expression and return the last key
-     * @return mixed
      */
-    public function lastKey()
+    public function lastKey(): mixed
     {
         $keys = AccessHelper::collectionKeys($this->data);
 
@@ -123,20 +131,17 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
     }
 
     /**
-     * @param $expression
-     * @return array
-     * @throws \Exception
+     * @throws JSONPathException
      */
-    public function parseTokens($expression)
+    public function parseTokens(string $expression): array
     {
-        $cacheKey = md5($expression);
+        $cacheKey = crc32($expression);
 
         if (isset(static::$tokenCache[$cacheKey])) {
             return static::$tokenCache[$cacheKey];
         }
 
         $lexer = new JSONPathLexer($expression);
-
         $tokens = $lexer->parseExpression();
 
         static::$tokenCache[$cacheKey] = $tokens;
@@ -144,20 +149,32 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
         return $tokens;
     }
 
-    /**
-     * @return mixed
-     */
-    public function data()
+    public function getData(): array
     {
         return $this->data;
     }
 
-    public function offsetExists($offset)
+    /**
+     * @return mixed|null
+     * @noinspection MagicMethodsValidityInspection
+     */
+    public function __get($key)
+    {
+        return $this->offsetExists($key) ? $this->offsetGet($key) : null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function offsetExists($offset): bool
     {
         return AccessHelper::keyExists($this->data, $offset);
     }
 
-    public function offsetGet($offset)
+    /**
+     * @inheritDoc
+     */
+    public function offsetGet($offset): mixed
     {
         $value = AccessHelper::getValue($this->data, $offset);
 
@@ -166,7 +183,10 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
             : $value;
     }
 
-    public function offsetSet($offset, $value)
+    /**
+     * @inheritDoc
+     */
+    public function offsetSet($offset, $value): void
     {
         if ($offset === null) {
             $this->data[] = $value;
@@ -175,20 +195,26 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
         }
     }
 
-    public function offsetUnset($offset)
+    /**
+     * @inheritDoc
+     */
+    public function offsetUnset($offset): void
     {
         AccessHelper::unsetValue($this->data, $offset);
     }
 
-    public function jsonSerialize()
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize(): array
     {
-        return $this->data;
+        return $this->getData();
     }
 
     /**
-     * Return the current element
+     * @inheritDoc
      */
-    public function current()
+    public function current(): mixed
     {
         $value = current($this->data);
 
@@ -196,50 +222,41 @@ class JSONPath implements ArrayAccess, Iterator, JsonSerializable, Countable
     }
 
     /**
-     * Move forward to next element
+     * @inheritDoc
      */
-    public function next()
+    public function next(): void
     {
         next($this->data);
     }
 
     /**
-     * Return the key of the current element
+     * @inheritDoc
      */
-    public function key()
+    public function key(): mixed
     {
         return key($this->data);
     }
 
     /**
-     * Checks if current position is valid
+     * @inheritDoc
      */
-    public function valid()
+    public function valid(): bool
     {
         return key($this->data) !== null;
     }
 
     /**
-     * Rewind the Iterator to the first element
+     * @inheritDoc
      */
-    public function rewind()
+    public function rewind(): void
     {
         reset($this->data);
     }
 
     /**
-     * @param $key
-     * @return JSONPath|mixed|null|static
+     * @inheritDoc
      */
-    public function __get($key)
-    {
-        return $this->offsetExists($key) ? $this->offsetGet($key) : null;
-    }
-
-    /**
-     * Count elements of an object
-     */
-    public function count()
+    public function count(): int
     {
         return count($this->data);
     }

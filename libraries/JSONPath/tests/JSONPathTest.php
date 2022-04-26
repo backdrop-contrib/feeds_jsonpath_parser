@@ -1,630 +1,823 @@
 <?php
 
+/**
+ * JSONPath implementation for PHP.
+ *
+ * @license https://github.com/SoftCreatR/JSONPath/blob/main/LICENSE  MIT License
+ */
+
+declare(strict_types=1);
+
 namespace Flow\JSONPath\Test;
 
-require_once __DIR__ . "/../vendor/autoload.php";
-
-use Flow\JSONPath\JSONPath;
+use JsonException;
+use Flow\JSONPath\{JSONPath, JSONPathException};
+use Flow\JSONPath\Test\Traits\TestDataTrait;
 use PHPUnit\Framework\TestCase;
+
+use function is_object;
+use function json_decode;
+use function json_encode;
+
+use const JSON_THROW_ON_ERROR;
 
 class JSONPathTest extends TestCase
 {
+    use TestDataTrait;
 
     /**
      * $.store.books[0].title
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testChildOperators()
+    public function testChildOperators(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find('$.store.books[0].title');
-        $this->assertEquals('Sayings of the Century', $result[0]);
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[0].title');
+
+        self::assertEquals('Sayings of the Century', $result[0]);
+    }
+
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testIndexesObject(): void
+    {
+        $result = (new JSONPath($this->getData('indexed-object')))
+            ->find('$.store.books[3].title');
+
+        self::assertEquals('Sword of Honour', $result[0]);
     }
 
     /**
      * $['store']['books'][0]['title']
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testChildOperatorsAlt()
+    public function testChildOperatorsAlt(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$['store']['books'][0]['title']");
-        $this->assertEquals('Sayings of the Century', $result[0]);
+        $result = (new JSONPath($this->getData('example')))
+            ->find("$['store']['books'][0]['title']");
+
+        self::assertEquals('Sayings of the Century', $result[0]);
     }
 
     /**
      * $.array[start:end:step]
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testFilterSliceA()
+    public function testFilterSliceA(): void
     {
         // Copy all items... similar to a wildcard
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$['store']['books'][:].title");
-        $this->assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick', 'The Lord of the Rings'], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find("$['store']['books'][:].title");
+
+        self::assertEquals(
+            ['Sayings of the Century', 'Sword of Honour', 'Moby Dick', 'The Lord of the Rings'],
+            $result->getData()
+        );
     }
 
     /**
      * Positive end indexes
      * $[0:2]
+     *
+     * @throws JSONPathException
      */
-    public function testFilterSlice_PositiveEndIndexes()
+    public function testFilterSlicePositiveEndIndexes(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:0]");
-        $this->assertEquals([], $result->data());
+        $jsonPath = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']));
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:1]");
-        $this->assertEquals(["first"], $result->data());
+        $result = $jsonPath
+            ->find('$[0:0]');
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:2]");
-        $this->assertEquals(["first", "second"], $result->data());
+        self::assertEquals([], $result->getData());
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[:2]");
-        $this->assertEquals(["first", "second"], $result->data());
+        $result = $jsonPath
+            ->find('$[0:1]');
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[1:2]");
-        $this->assertEquals(["second"], $result->data());
+        self::assertEquals(['first'], $result->getData());
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:3:1]");
-        $this->assertEquals(["first", "second","third"], $result->data());
+        $result = $jsonPath
+            ->find('$[0:2]');
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:3:0]");
-        $this->assertEquals(["first", "second","third"], $result->data());
+        self::assertEquals(['first', 'second'], $result->getData());
+
+        $result = $jsonPath
+            ->find('$[:2]');
+
+        self::assertEquals(['first', 'second'], $result->getData());
+
+        $result = $jsonPath
+            ->find('$[1:2]');
+
+        self::assertEquals(['second'], $result->getData());
+
+        $result = $jsonPath
+            ->find('$[0:3:1]');
+
+        self::assertEquals(['first', 'second', 'third'], $result->getData());
+
+        $result = $jsonPath
+            ->find('$[0:3:0]');
+
+        self::assertEquals(['first', 'second', 'third'], $result->getData());
     }
 
-    public function testFilterSlice_NegativeStartIndexes()
+    /**
+     * @throws JSONPathException
+     */
+    public function testFilterSliceNegativeStartIndexes(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[-2:]");
-        $this->assertEquals(["fourth", "fifth"], $result->data());
+        $result = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']))
+            ->find('$[-2:]');
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[-1:]");
-        $this->assertEquals(["fifth"], $result->data());
+        self::assertEquals(['fourth', 'fifth'], $result->getData());
+
+        $result = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']))
+            ->find('$[-1:]');
+
+        self::assertEquals(['fifth'], $result->getData());
+
+        $result = (new JSONPath(['first', 'second', 'third']))
+            ->find('$[-4:]');
+
+        self::assertEquals(['first', 'second', 'third'], $result->getData());
     }
 
     /**
      * Negative end indexes
      * $[:-2]
+     *
+     * @throws JSONPathException
      */
-    public function testFilterSlice_NegativeEndIndexes()
+    public function testFilterSliceNegativeEndIndexes(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[:-2]");
-        $this->assertEquals(["first", "second", "third"], $result->data());
+        $jsonPath = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']));
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:-2]");
-        $this->assertEquals(["first", "second", "third"], $result->data());
+        $result = $jsonPath
+            ->find('$[:-2]');
+
+        self::assertEquals(['first', 'second', 'third'], $result->getData());
+
+        $result = $jsonPath
+            ->find('$[0:-2]');
+
+        self::assertEquals(['first', 'second', 'third'], $result->getData());
     }
 
     /**
      * Negative end indexes
      * $[:-2]
+     *
+     * @throws JSONPathException
      */
-    public function testFilterSlice_NegativeStartAndEndIndexes()
+    public function testFilterSliceNegativeStartAndEndIndexes(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[-2:-1]");
-        $this->assertEquals(["fourth"], $result->data());
+        $jsonPath = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']));
 
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[-4:-2]");
-        $this->assertEquals(["second", "third"], $result->data());
+        $result = $jsonPath
+            ->find('$[-2:-1]');
+
+        self::assertEquals(['fourth'], $result->getData());
+
+        $result = $jsonPath
+            ->find('$[-4:-2]');
+
+        self::assertEquals(['second', 'third'], $result->getData());
     }
 
     /**
      * Negative end indexes
      * $[:-2]
+     *
+     * @throws JSONPathException
      */
-    public function testFilterSlice_NegativeStartAndPositiveEnd()
+    public function testFilterSliceNegativeStartAndPositiveEnd(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[-2:2]");
-        $this->assertEquals([], $result->data());
+        $result = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']))
+            ->find('$[-2:2]');
+
+        self::assertEquals([], $result->getData());
     }
 
-    public function testFilterSlice_StepBy2()
+    /**
+     * @throws JSONPathException
+     */
+    public function testFilterSliceStepBy2(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[0:4:2]");
-        $this->assertEquals(["first", "third"], $result->data());
-    }
+        $result = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']))
+            ->find('$[0:4:2]');
 
+        self::assertEquals(['first', 'third'], $result->getData());
+    }
 
     /**
      * The Last item
      * $[-1]
+     *
+     * @throws JSONPathException
      */
-    public function testFilterLastIndex()
+    public function testFilterLastIndex(): void
     {
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[-1]");
-        $this->assertEquals(["fifth"], $result->data());
+        $result = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']))
+            ->find('$[-1]');
+
+        self::assertEquals(['fifth'], $result->getData());
     }
 
     /**
      * Array index slice only end
      * $[:2]
+     *
+     * @throws JSONPathException
      */
-    public function testFilterSliceG()
+    public function testFilterSliceG(): void
     {
         // Fetch up to the second index
-        $result = (new JSONPath(["first", "second", "third", "fourth", "fifth"]))->find("$[:2]");
-        $this->assertEquals(["first", "second"], $result->data());
+        $result = (new JSONPath(['first', 'second', 'third', 'fourth', 'fifth']))
+            ->find('$[:2]');
+
+        self::assertEquals(['first', 'second'], $result->getData());
     }
 
     /**
      * $.store.books[(@.length-1)].title
      *
      * This notation is only partially implemented eg. hacked in
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testChildQuery()
+    public function testChildQuery(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$.store.books[(@.length-1)].title");
-        $this->assertEquals(['The Lord of the Rings'], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[(@.length-1)].title');
+
+        self::assertEquals(['The Lord of the Rings'], $result->getData());
     }
 
     /**
      * $.store.books[?(@.price < 10)].title
      * Filter books that have a price less than 10
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testQueryMatchLessThan()
+    public function testQueryMatchLessThan(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$.store.books[?(@.price < 10)].title");
-        $this->assertEquals(['Sayings of the Century', 'Moby Dick'], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[?(@.price < 10)].title');
+
+        self::assertEquals(['Sayings of the Century', 'Moby Dick'], $result->getData());
+    }
+
+    /**
+     * $.store.books[?(@.price > 10)].title
+     * Filter books that have a price more than 10
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchMoreThan(): void
+    {
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[?(@.price > 10)].title');
+
+        self::assertEquals(['Sword of Honour', 'The Lord of the Rings'], $result->getData());
+    }
+
+    /**
+     * $.store.books[?(@.price <= 12.99)].title
+     * Filter books that have a price less or equal to 12.99
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchLessOrEqual(): void
+    {
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[?(@.price <= 12.99)].title');
+
+        self::assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], $result->getData());
+    }
+
+    /**
+     * $.store.books[?(@.price >= 12.99)].title
+     * Filter books that have a price less or equal to 12.99
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchEqualOrMore(): void
+    {
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[?(@.price >= 12.99)].title');
+
+        self::assertEquals(['Sword of Honour', 'The Lord of the Rings'], $result->getData());
     }
 
     /**
      * $..books[?(@.author == "J. R. R. Tolkien")]
-     * Filter books that have a title equal to "..."
+     * Filter books that have an author equal to "..."
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testQueryMatchEquals()
+    public function testQueryMatchEquals(): void
     {
-        $results = (new JSONPath($this->exampleData(rand(0, 1))))->find('$..books[?(@.author == "J. R. R. Tolkien")].title');
-        $this->assertEquals($results[0], 'The Lord of the Rings');
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[?(@.author == "J. R. R. Tolkien")].title');
+
+        self::assertEquals('The Lord of the Rings', $result[0]);
     }
 
     /**
      * $..books[?(@.author = 1)]
      * Filter books that have a title equal to "..."
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testQueryMatchEqualsWithUnquotedInteger()
+    public function testQueryMatchEqualsWithUnquotedInteger(): void
     {
-        $results = (new JSONPath($this->exampleDataWithSimpleIntegers(rand(0, 1))))->find('$..features[?(@.value = 1)]');
-        $this->assertEquals($results[0]->name, "foo");
-        $this->assertEquals($results[1]->name, "baz");
+        $results = (new JSONPath($this->getData('simple-integers')))
+            ->find('$..features[?(@.value = 1)]');
+
+        self::assertEquals('foo', $results[0]->name);
+        self::assertEquals('baz', $results[1]->name);
     }
 
     /**
      * $..books[?(@.author != "J. R. R. Tolkien")]
-     * Filter books that have a title not equal to "..."
+     * Filter books that have an author not equal to "..."
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testQueryMatchNotEqualsTo()
+    public function testQueryMatchNotEqualsTo(): void
     {
-        $results = (new JSONPath($this->exampleData(rand(0, 1))))->find('$..books[?(@.author != "J. R. R. Tolkien")].title');
-        $this->assertcount(3, $results);
-        $this->assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], [$results[0], $results[1], $results[2]]);
+        $jsonPath = (new JSONPath($this->getData('example')));
 
-        $results = (new JSONPath($this->exampleData(rand(0, 1))))->find('$..books[?(@.author !== "J. R. R. Tolkien")].title');
-        $this->assertcount(3, $results);
-        $this->assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], [$results[0], $results[1], $results[2]]);
+        $results = $jsonPath
+            ->find('$..books[?(@.author != "J. R. R. Tolkien")].title');
 
-        $results = (new JSONPath($this->exampleData(rand(0, 1))))->find('$..books[?(@.author <> "J. R. R. Tolkien")].title');
-        $this->assertcount(3, $results);
-        $this->assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], [$results[0], $results[1], $results[2]]);
+        self::assertcount(3, $results);
+        self::assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], $results->getData());
+
+        $results = $jsonPath
+            ->find('$..books[?(@.author !== "J. R. R. Tolkien")].title');
+
+        self::assertcount(3, $results);
+        self::assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], $results->getData());
+
+        $results = $jsonPath
+            ->find('$..books[?(@.author <> "J. R. R. Tolkien")].title');
+
+        self::assertcount(3, $results);
+        self::assertEquals(['Sayings of the Century', 'Sword of Honour', 'Moby Dick'], $results->getData());
+    }
+
+    /**
+     * $..books[?(@.author =~ /nigel ree?s/i)]
+     * Filter books where author matches regex
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchWithRegexCaseSensitive(): void
+    {
+        $jsonPath = (new JSONPath($this->getData('example')));
+
+        $results = $jsonPath
+            ->find('$..books[?(@.author =~ /nigel ree?s/i)].title');
+
+        self::assertcount(1, $results);
+        self::assertEquals(['Sayings of the Century'], $results->getData());
+
+        $results = $jsonPath
+            ->find('$..books[?(@.title =~ /^(Say|The).*/)].title');
+
+        self::assertcount(2, $results);
+        self::assertEquals(['Sayings of the Century', 'The Lord of the Rings'], $results->getData());
+    }
+
+    /**
+     * $..books[?(@.author =~ "J. R. R. Tolkien")]
+     * Filter books where author matches invalid regex
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchWithInvalidRegex(): void
+    {
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[?(@.author =~ "J. R. R. Tolkien")].title');
+
+        self::assertEmpty($result->getData());
+    }
+
+    /**
+     * $..books[?(@.author in ["J. R. R. Tolkien", "Nigel Rees"])]
+     * Filter books that have a title in ["...", "..."]
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchIn(): void
+    {
+        $results = (new JSONPath($this->getData('example')))
+            ->find('$..books[?(@.author in ["J. R. R. Tolkien", "Nigel Rees"])].title');
+
+        self::assertEquals(['Sayings of the Century', 'The Lord of the Rings'], $results->getData());
+    }
+
+    /**
+     * $..books[?(@.author nin ["J. R. R. Tolkien", "Nigel Rees"])]
+     * Filter books that don't have a title in ["...", "..."]
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchNin(): void
+    {
+        $results = (new JSONPath($this->getData('example')))
+            ->find('$..books[?(@.author nin ["J. R. R. Tolkien", "Nigel Rees"])].title');
+
+        self::assertEquals(['Sword of Honour', 'Moby Dick'], $results->getData());
+    }
+
+    /**
+     * $..books[?(@.author nin ["J. R. R. Tolkien", "Nigel Rees"])]
+     * Filter books that don't have a title in ["...", "..."]
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchNotIn(): void
+    {
+        $results = (new JSONPath($this->getData('example')))
+            ->find('$..books[?(@.author !in ["J. R. R. Tolkien", "Nigel Rees"])].title');
+
+        self::assertEquals(['Sword of Honour', 'Moby Dick'], $results->getData());
     }
 
     /**
      * $.store.books[*].author
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testWildcardAltNotation()
+    public function testWildcardAltNotation(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$.store.books[*].author");
-        $this->assertEquals(['Nigel Rees', 'Evelyn Waugh', 'Herman Melville', 'J. R. R. Tolkien'], $result->data());
+        $results = (new JSONPath($this->getData('example')))
+            ->find('$.store.books[*].author');
+
+        self::assertEquals(['Nigel Rees', 'Evelyn Waugh', 'Herman Melville', 'J. R. R. Tolkien'], $results->getData());
     }
 
     /**
      * $..author
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveChildSearch()
+    public function testRecursiveChildSearch(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$..author");
-        $this->assertEquals(['Nigel Rees', 'Evelyn Waugh', 'Herman Melville', 'J. R. R. Tolkien'], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..author');
+
+        self::assertEquals(['Nigel Rees', 'Evelyn Waugh', 'Herman Melville', 'J. R. R. Tolkien'], $result->getData());
     }
 
     /**
      * $.store.*
      * all things in store
      * the structure of the example data makes this test look weird
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testWildCard()
+    public function testWildCard(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$.store.*");
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store.*');
+
         if (is_object($result[0][0])) {
-            $this->assertEquals('Sayings of the Century', $result[0][0]->title);
+            self::assertEquals('Sayings of the Century', $result[0][0]->title);
         } else {
-            $this->assertEquals('Sayings of the Century', $result[0][0]['title']);
+            self::assertEquals('Sayings of the Century', $result[0][0]['title']);
         }
 
         if (is_object($result[1])) {
-            $this->assertEquals('red', $result[1]->color);
+            self::assertEquals('red', $result[1]->color);
         } else {
-            $this->assertEquals('red', $result[1]['color']);
+            self::assertEquals('red', $result[1]['color']);
         }
     }
 
     /**
      * $.store..price
      * the price of everything in the store.
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveChildSearchAlt()
+    public function testRecursiveChildSearchAlt(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$.store..price");
-        $this->assertEquals([8.95, 12.99, 8.99, 22.99, 19.95], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$.store..price');
+
+        self::assertEquals([8.95, 12.99, 8.99, 22.99, 19.95], $result->getData());
     }
 
     /**
      * $..books[2]
      * the third book
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveChildSearchWithChildIndex()
+    public function testRecursiveChildSearchWithChildIndex(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$..books[2].title");
-        $this->assertEquals(["Moby Dick"], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[2].title');
+
+        self::assertEquals(['Moby Dick'], $result->getData());
     }
 
     /**
      * $..books[(@.length-1)]
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveChildSearchWithChildQuery()
+    public function testRecursiveChildSearchWithChildQuery(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$..books[(@.length-1)].title");
-        $this->assertEquals(["The Lord of the Rings"], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[(@.length-1)].title');
+
+        self::assertEquals(['The Lord of the Rings'], $result->getData());
     }
 
     /**
      * $..books[-1:]
-     * Resturn the last results
+     * Return the last results
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveChildSearchWithSliceFilter()
+    public function testRecursiveChildSearchWithSliceFilter(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$..books[-1:].title");
-        $this->assertEquals(["The Lord of the Rings"], $result->data());
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[-1:].title');
+
+        self::assertEquals(['The Lord of the Rings'], $result->getData());
     }
 
     /**
      * $..books[?(@.isbn)]
      * filter all books with isbn number
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveWithQueryMatch()
+    public function testRecursiveWithQueryMatch(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$..books[?(@.isbn)].isbn");
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[?(@.isbn)].isbn');
 
-        $this->assertEquals(['0-553-21311-3', '0-395-19395-8'], $result->data());
+        self::assertEquals(['0-553-21311-3', '0-395-19395-8'], $result->getData());
+    }
+
+    /**
+     * .data.tokens[?(@.Employee.FirstName)]
+     * Verify that it is possible to filter with a key containing punctuation
+     *
+     * @throws JSONPathException|JsonException
+     */
+    public function testRecursiveWithQueryMatchWithDots(): void
+    {
+        $result = (new JSONPath($this->getData('with-dots')))
+            ->find(".data.tokens[?(@.Employee.FirstName)]");
+        $result = json_decode(
+            json_encode($result, JSON_THROW_ON_ERROR),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        self::assertEquals([['Employee.FirstName' => 'Jack']], $result);
     }
 
     /**
      * $..*
      * All members of JSON structure
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testRecursiveWithWildcard()
+    public function testRecursiveWithWildcard(): void
     {
-        $result = (new JSONPath($this->exampleData(rand(0, 1))))->find("$..*");
-        $result = json_decode(json_encode($result), true);
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..*');
+        $result = json_decode(
+            json_encode($result, JSON_THROW_ON_ERROR),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
 
-        $this->assertEquals('Sayings of the Century', $result[0]['books'][0]['title']);
-        $this->assertEquals(19.95, $result[26]);
+        self::assertEquals('Sayings of the Century', $result[0]['books'][0]['title']);
+        self::assertEquals(19.95, $result[27]);
     }
 
     /**
      * Tests direct key access.
+     *
+     * @throws JSONPathException
      */
-    public function testSimpleArrayAccess()
+    public function testSimpleArrayAccess(): void
     {
-        $result = (new JSONPath(['title' => 'test title']))->find('title');
+        $result = (new JSONPath(['title' => 'test title']))
+            ->find('title');
 
-        $this->assertEquals(['test title'], $result->data());
+        self::assertEquals(['test title'], $result->getData());
     }
 
-    public function testFilteringOnNoneArrays()
+    /**
+     * @throws JSONPathException
+     */
+    public function testFilteringOnNoneArrays(): void
     {
-        $data = ['foo' => 'asdf'];
+        $result = (new JSONPath(['foo' => 'asdf']))
+            ->find('$.foo.bar');
 
-        $result = (new JSONPath($data))->find("$.foo.bar");
-        $this->assertEquals([], $result->data());
+        self::assertEquals([], $result->getData());
     }
 
-
-    public function testMagicMethods()
+    /**
+     * @throws JSONPathException
+     */
+    public function testMagicMethods(): void
     {
         $fooClass = new JSONPathTestClass();
-
         $results = (new JSONPath($fooClass, JSONPath::ALLOW_MAGIC))->find('$.foo');
 
-        $this->assertEquals(['bar'], $results->data());
+        self::assertEquals(['bar'], $results->getData());
     }
 
-
-    public function testMatchWithComplexSquareBrackets()
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testMatchWithComplexSquareBrackets(): void
     {
-        $result = (new JSONPath($this->exampleDataExtra()))->find("$['http://www.w3.org/2000/01/rdf-schema#label'][?(@['@language']='en')]['@language']");
-        $this->assertEquals(["en"], $result->data());
+        $result = (new JSONPath($this->getData('extra')))
+            ->find("$['http://www.w3.org/2000/01/rdf-schema#label'][?(@['@language']='en')]['@language']");
+
+        self::assertEquals(["en"], $result->getData());
     }
 
-    public function testQueryMatchWithRecursive()
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryMatchWithRecursive(): void
     {
-        $locations = $this->exampleDataLocations();
-        $result    = (new JSONPath($locations))->find("..[?(@.type == 'suburb')].name");
-        $this->assertEquals(["Rosebank"], $result->data());
+        $result = (new JSONPath($this->getData('locations')))
+            ->find("..[?(@.type == 'suburb')].name");
+
+        self::assertEquals(["Rosebank"], $result->getData());
     }
 
-    public function testFirst()
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testFirst(): void
     {
-        $result = (new JSONPath($this->exampleDataExtra()))->find("$['http://www.w3.org/2000/01/rdf-schema#label'].*");
+        $result = (new JSONPath($this->getData('extra')))
+            ->find("$['http://www.w3.org/2000/01/rdf-schema#label'].*");
 
-        $this->assertEquals(["@language" => "en"], $result->first()->data());
+        self::assertEquals(["@language" => "en"], $result->first()->getData());
     }
 
-    public function testLast()
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testLast(): void
     {
-        $result = (new JSONPath($this->exampleDataExtra()))->find("$['http://www.w3.org/2000/01/rdf-schema#label'].*");
-        $this->assertEquals(["@language" => "de"], $result->last()->data());
+        $result = (new JSONPath($this->getData('extra')))
+            ->find("$['http://www.w3.org/2000/01/rdf-schema#label'].*");
+
+        self::assertEquals(["@language" => "de"], $result->last()->getData());
     }
 
-    public function testSlashesInIndex()
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testSlashesInIndex(): void
     {
-        $result = (new JSONPath($this->exampleDataWithSlashes()))->find("$['mediatypes']['image/png']");
+        $result = (new JSONPath($this->getData('with-slashes')))
+            ->find("$['mediatypes']['image/png']");
 
-        $this->assertEquals(
+        self::assertEquals(["/core/img/filetypes/image.png"], $result->getData());
+    }
+
+    /**
+     * @throws JSONPathException
+     */
+    public function testUnionWithKeys(): void
+    {
+        $result = (new JSONPath(
             [
-                "/core/img/filetypes/image.png",
-            ],
-            $result->data()
+                "key" => "value",
+                "another" => "entry",
+            ]
+        ))->find("$['key','another']");
+
+        self::assertEquals(["value", "entry"], $result->getData());
+    }
+
+    /**
+     * @throws JSONPathException
+     */
+    public function testCyrillicText(): void
+    {
+        $jsonPath = (new JSONPath(["трололо" => 1]));
+
+        $result = $jsonPath
+            ->find("$['трололо']");
+
+        self::assertEquals([1], $result->getData());
+
+        $result = $jsonPath
+            ->find("$.трололо");
+
+        self::assertEquals([1], $result->getData());
+    }
+
+    public function testOffsetUnset(): void
+    {
+        $jsonIterator = new JSONPath(
+            [
+                "route" => [
+                    ["name" => "A", "type" => "type of A"],
+                    ["name" => "B", "type" => "type of B"],
+                ],
+            ]
         );
-    }
-
-    public function testCyrillicText()
-    {
-        $result = (new JSONPath(["трололо" => 1]))->find("$['трололо']");
-
-        $this->assertEquals([1], $result->data());
-
-        $result = (new JSONPath(["трололо" => 1]))->find("$.трололо");
-
-        $this->assertEquals([1], $result->data());
-    }
-
-    public function testOffsetUnset()
-    {
-        $data = [
-            "route" => [
-                ["name" => "A", "type" => "type of A"],
-                ["name" => "B", "type" => "type of B"],
-            ],
-        ];
-        $data = json_encode($data);
-
-        $jsonIterator = new JSONPath(json_decode($data));
 
         /** @var JSONPath $route */
         $route = $jsonIterator->offsetGet('route');
-
         $route->offsetUnset(0);
-
         $first = $route->first();
 
-        $this->assertEquals("B", $first['name']);
+        self::assertEquals("B", $first['name']);
     }
 
-
-    public function testFirstKey()
+    public function testFirstKey(): void
     {
         // Array test for array
-        $jsonPath = new JSONPath(['a' => 'A', 'b', 'B']);
+        $firstKey = (new JSONPath(['a' => 'A', 'b', 'B']))->firstKey();
 
-        $firstKey = $jsonPath->firstKey();
-
-        $this->assertEquals('a', $firstKey);
+        self::assertEquals('a', $firstKey);
 
         // Array test for object
-        $jsonPath = new JSONPath((object)['a' => 'A', 'b', 'B']);
+        $firstKey = (new JSONPath((object)['a' => 'A', 'b', 'B']))->firstKey();
 
-        $firstKey = $jsonPath->firstKey();
-
-        $this->assertEquals('a', $firstKey);
+        self::assertEquals('a', $firstKey);
     }
 
-    public function testLastKey()
+    public function testLastKey(): void
     {
         // Array test for array
-        $jsonPath = new JSONPath(['a' => 'A', 'b' => 'B', 'c' => 'C']);
+        $lastKey = (new JSONPath(['a' => 'A', 'b' => 'B', 'c' => 'C']))->lastKey();
 
-        $lastKey = $jsonPath->lastKey();
-
-        $this->assertEquals('c', $lastKey);
+        self::assertEquals('c', $lastKey);
 
         // Array test for object
-        $jsonPath = new JSONPath((object)['a' => 'A', 'b' => 'B', 'c' => 'C']);
+        $lastKey = (new JSONPath((object)['a' => 'A', 'b' => 'B', 'c' => 'C']))->lastKey();
 
-        $lastKey = $jsonPath->lastKey();
-
-        $this->assertEquals('c', $lastKey);
+        self::assertEquals('c', $lastKey);
     }
 
     /**
      * Test: ensure trailing comma is stripped during parsing
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testTrailingComma()
+    public function testTrailingComma(): void
     {
-        $jsonPath = new JSONPath(json_decode('{"store":{"book":[{"category":"reference","author":"Nigel Rees","title":"Sayings of the Century","price":8.95},{"category":"fiction","author":"Evelyn Waugh","title":"Sword of Honour","price":12.99},{"category":"fiction","author":"Herman Melville","title":"Moby Dick","isbn":"0-553-21311-3","price":8.99},{"category":"fiction","author":"J. R. R. Tolkien","title":"The Lord of the Rings","isbn":"0-395-19395-8","price":22.99}],"bicycle":{"color":"red","price":19.95}},"expensive":10}'));
+        $result = (new JSONPath($this->getData('example')))
+            ->find("$..books[0,1,2,]");
 
-        $result = $jsonPath->find("$..book[0,1,2,]");
-
-        $this->assertCount(3, $result);
+        self::assertCount(3, $result);
     }
 
     /**
      * Test: ensure negative indexes return -n from last index
+     *
+     * @throws JSONPathException|JsonException
      */
-    public function testNegativeIndex()
+    public function testNegativeIndex(): void
     {
-        $jsonPath = new JSONPath(json_decode('{"store":{"book":[{"category":"reference","author":"Nigel Rees","title":"Sayings of the Century","price":8.95},{"category":"fiction","author":"Evelyn Waugh","title":"Sword of Honour","price":12.99},{"category":"fiction","author":"Herman Melville","title":"Moby Dick","isbn":"0-553-21311-3","price":8.99},{"category":"fiction","author":"J. R. R. Tolkien","title":"The Lord of the Rings","isbn":"0-395-19395-8","price":22.99}],"bicycle":{"color":"red","price":19.95}},"expensive":10}'));
+        $result = (new JSONPath($this->getData('example')))
+            ->find('$..books[-2]');
 
-        $result = $jsonPath->find("$..book[-2]");
-
-        $this->assertEquals("Herman Melville", $result[0]['author']);
+        self::assertEquals("Herman Melville", $result[0]['author']);
     }
 
-    public function testQueryAccessWithNumericalIndexes()
+    /**
+     * @throws JSONPathException|JsonException
+     */
+    public function testQueryAccessWithNumericalIndexes(): void
     {
-        $jsonPath = new JSONPath(json_decode('{
-            "result": {
-                "list": [
-                    {
-                        "time": 1477526400,
-                        "o": "11.51000"
-                    },
-                    {
-                        "time": 1477612800,
-                        "o": "11.49870"
-                    }
-                ]
-            }
-        }'));
+        $result = (new JSONPath($this->getData('numerical-indexes-object')))
+            ->find("$.result.list[?(@.o == \"11.51000\")]");
 
-        $result = $jsonPath->find("$.result.list[?(@.o == \"11.51000\")]");
+        self::assertEquals("11.51000", $result[0]->o);
 
-        $this->assertEquals("11.51000", $result[0]->o);
+        $result = (new JSONPath($this->getData('numerical-indexes-array')))
+            ->find("$.result.list[?(@[1] == \"11.51000\")]");
 
-        $jsonPath = new JSONPath(json_decode('{
-            "result": {
-                "list": [
-                    [
-                        1477526400,
-                        "11.51000"
-                    ],
-                    [
-                        1477612800,
-                        "11.49870"
-                    ]
-                ]
-            }
-        }'));
-
-        $result = $jsonPath->find("$.result.list[?(@[1] == \"11.51000\")]");
-
-        $this->assertEquals("11.51000", $result[0][1]);
-
-    }
-
-
-    public function exampleData($asArray = true)
-    {
-        $json = '
-        {
-          "store":{
-            "books":[
-              {
-                "category":"reference",
-                "author":"Nigel Rees",
-                "title":"Sayings of the Century",
-                "price":8.95
-              },
-              {
-                "category":"fiction",
-                "author":"Evelyn Waugh",
-                "title":"Sword of Honour",
-                "price":12.99
-              },
-              {
-                "category":"fiction",
-                "author":"Herman Melville",
-                "title":"Moby Dick",
-                "isbn":"0-553-21311-3",
-                "price":8.99
-              },
-              {
-                "category":"fiction",
-                "author":"J. R. R. Tolkien",
-                "title":"The Lord of the Rings",
-                "isbn":"0-395-19395-8",
-                "price":22.99
-              }
-            ],
-            "bicycle":{
-              "color":"red",
-              "price":19.95
-            }
-          }
-        }';
-        return json_decode($json, $asArray);
-    }
-
-    public function exampleDataExtra($asArray = true)
-    {
-        $json = '
-            {
-               "http://www.w3.org/2000/01/rdf-schema#label":[
-                  {
-                     "@language":"en"
-                  },
-                  {
-                     "@language":"de"
-                  }
-               ]
-            }
-        ';
-
-        return json_decode($json, $asArray);
-    }
-
-
-    public function exampleDataLocations($asArray = true)
-    {
-        $json = '
-            {
-               "name": "Gauteng",
-               "type": "province",
-               "child": {
-                    "name": "Johannesburg",
-                    "type": "city",
-                    "child": {
-                        "name": "Rosebank",
-                        "type": "suburb"
-                    }
-               }
-            }
-        ';
-
-        return json_decode($json, $asArray);
-    }
-
-
-    public function exampleDataWithSlashes($asArray = true)
-    {
-        $json = '
-            {
-                "features": [],
-                "mediatypes": {
-                    "image/png": "/core/img/filetypes/image.png",
-                    "image/jpeg": "/core/img/filetypes/image.png",
-                    "image/gif": "/core/img/filetypes/image.png",
-                    "application/postscript": "/core/img/filetypes/image-vector.png"
-                }
-            }
-        ';
-
-        return json_decode($json, $asArray);
-    }
-
-    public function exampleDataWithSimpleIntegers($asArray = true)
-    {
-        $json = '
-            {
-                "features": [{"name": "foo", "value": 1},{"name": "bar", "value": 2},{"name": "baz", "value": 1}]
-            }
-        ';
-
-        return json_decode($json, $asArray);
-    }
-
-
-}
-
-class JSONPathTestClass
-{
-    protected $attributes = [
-        'foo' => 'bar',
-    ];
-
-    public function __get($key)
-    {
-        return isset($this->attributes[$key]) ? $this->attributes[$key] : null;
+        self::assertEquals("11.51000", $result[0][1]);
     }
 }
