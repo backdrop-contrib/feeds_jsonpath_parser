@@ -3,6 +3,5 @@ description = Parse a JSON document using JSONPath.
 backdrop = 1.x
 type = module
 dependencies[] = feeds
-dependencies[] = libraries
 dependencies[] = xautoload
 package = Feeds
