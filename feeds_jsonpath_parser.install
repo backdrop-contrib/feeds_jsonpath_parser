@@ -23,7 +23,7 @@ function feeds_jsonpath_parser_requirements($phase) {
     return $requirements;
   }
 
-  drupal_load('module', 'feeds_jsonpath_parser');
+  backdrop_load('module', 'feeds_jsonpath_parser');
 
   $t = get_t();
   $requirements['feeds_jsonpath_parser']['title'] = $t('JSONPath library');

@@ -13,24 +13,27 @@ define('FEEDS_JSONPATH_PARSER_LIBRARY_VERSION', '0.8.0');
  * Implements hook_autoload_info().
  */
 function feeds_jsonpath_parser_autoload_info() {
-  return array(
-    // Instead of xautoload?
-    /*
-    'JSONPath'          => 'libraries/JSONPath/src/Flow/JSONPath/JSONPath.php',
-    'JSONPathException' => 'libraries/JSONPath/src/Flow/JSONPath/JSONPathException.php',
-    'JSONPathLexer'     => 'libraries/JSONPath/src/Flow/JSONPath/JSONPathLexer.php',
-    'JSONPathToken'     => 'libraries/JSONPath/src/Flow/JSONPath/JSONPathToken.php',
-    'AccessHelper'      => 'libraries/JSONPath/src/Flow/JSONPath/AccessHelper.php',
-    'AbstractFilter'    => 'libraries/JSONPath/src/Flow/JSONPath/Filters/AbstractFilter.php',
-    'IndexesFilter'     => 'libraries/JSONPath/src/Flow/JSONPath/Filters/IndexesFilter.php',
-    'IndexFilter'       => 'libraries/JSONPath/src/Flow/JSONPath/Filters/IndexFilter.php',
-    'QueryMatchFilter'  => 'libraries/JSONPath/src/Flow/JSONPath/Filters/QueryMatchFilter.php',
-    'QueryResultFilter' => 'libraries/JSONPath/src/Flow/JSONPath/Filters/QueryResultFilter.php',
-    'RecursiveFilter'   => 'libraries/JSONPath/src/Flow/JSONPath/Filters/RecursiveFilter.php',
-    'SliceFilter'       => 'libraries/JSONPath/src/Flow/JSONPath/Filters/SliceFilter.php',
-    */
+  $autoloads = array(
     'FeedsJSONPathParser' => 'FeedsJSONPathParser.inc',
   );
+  if (!class_exists('Flow\JSONPath\JSONPath')) {
+    // If it hasn't been loaded with XAutoload or Composer, try to load library.
+    $autoloads += array(
+      'JSONPath' => 'libraries/JSONPath/src/JSONPath.php',
+      'JSONPathException' => 'libraries/JSONPath/src/JSONPathException.php',
+      'JSONPathLexer' => 'libraries/JSONPath/src/JSONPathLexer.php',
+      'JSONPathToken' => 'libraries/JSONPath/src/JSONPathToken.php',
+      'AccessHelper' => 'libraries/JSONPath/src/AccessHelper.php',
+      'AbstractFilter' => 'libraries/JSONPath/src/Filters/AbstractFilter.php',
+      'IndexesFilter' => 'libraries/JSONPath/src/Filters/IndexesFilter.php',
+      'IndexFilter' => 'libraries/JSONPath/src/Filters/IndexFilter.php',
+      'QueryMatchFilter' => 'libraries/JSONPath/src/Filters/QueryMatchFilter.php',
+      'QueryResultFilter' => 'libraries/JSONPath/src/Filters/QueryResultFilter.php',
+      'RecursiveFilter' => 'libraries/JSONPath/src/Filters/RecursiveFilter.php',
+      'SliceFilter' => 'libraries/JSONPath/src/Filters/SliceFilter.php',
+    );
+  }
+  return $autoloads;
 }
 
 /**
@@ -88,9 +91,10 @@ function feeds_jsonpath_parser_feeds_plugins() {
  * Loads the jsonpath library.
  */
 function feeds_jsonpath_parser_load_library() {
-  // Check first to see if the class is loaded some other way like composer.
-  if (!class_exists('\Flow\JSONPath\JSONPath', TRUE)) {
-    // If not, then we should have libraries installed.
+  // Check first to see if the class is loaded some other way like
+  // XAutoload (bundled version), Composer, or with Backdrop's autoload.
+  if (!class_exists('\Flow\JSONPath\JSONPath', TRUE) && !class_exists('JSONPath', TRUE)) {
+    // If not, then we can check if libraries is installed as a last resort.
     if (!module_exists('libraries')) {
       return FALSE;
     }

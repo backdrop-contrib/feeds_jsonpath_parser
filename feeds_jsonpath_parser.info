@@ -2,6 +2,7 @@ name = Feeds JSONPath Parser
 description = Parse a JSON document using JSONPath.
 backdrop = 1.x
 type = module
+
 dependencies[] = feeds
-dependencies[] = xautoload
+
 package = Feeds
