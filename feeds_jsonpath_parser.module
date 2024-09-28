@@ -17,19 +17,19 @@ function feeds_jsonpath_parser_autoload_info() {
     'FeedsJSONPathParser' => 'FeedsJSONPathParser.inc',
 
     // Use proper namespace.
-    'Flow\JSONPath\JSONPath' => 'libraries/jsonpath/src/JSONPath.php',
-    'Flow\JSONPath\JSONPathException' => 'libraries/jsonpath/src/JSONPathException.php',
-    'Flow\JSONPath\JSONPathLexer' => 'libraries/jsonpath/src/JSONPathLexer.php',
-    'Flow\JSONPath\JSONPathToken' => 'libraries/jsonpath/src/JSONPathToken.php',
-    'Flow\JSONPath\AccessHelper' => 'libraries/jsonpath/src/AccessHelper.php',
+    'Flow\JSONPath\JSONPath' => 'libraries/JSONPath/src/JSONPath.php',
+    'Flow\JSONPath\JSONPathException' => 'libraries/JSONPath/src/JSONPathException.php',
+    'Flow\JSONPath\JSONPathLexer' => 'libraries/JSONPath/src/JSONPathLexer.php',
+    'Flow\JSONPath\JSONPathToken' => 'libraries/JSONPath/src/JSONPathToken.php',
+    'Flow\JSONPath\AccessHelper' => 'libraries/JSONPath/src/AccessHelper.php',
 
-    'Flow\JSONPath\AbstractFilter' => 'libraries/jsonpath/src/Filters/AbstractFilter.php',
-    'Flow\JSONPath\IndexesFilter' => 'libraries/jsonpath/src/Filters/IndexesFilter.php',
-    'Flow\JSONPath\IndexFilter' => 'libraries/jsonpath/src/Filters/IndexFilter.php',
-    'Flow\JSONPath\QueryMatchFilter' => 'libraries/jsonpath/src/Filters/QueryMatchFilter.php',
-    'Flow\JSONPath\QueryResultFilter' => 'libraries/jsonpath/src/Filters/QueryResultFilter.php',
-    'Flow\JSONPath\RecursiveFilter' => 'libraries/jsonpath/src/Filters/RecursiveFilter.php',
-    'Flow\JSONPath\SliceFilter' => 'libraries/jsonpath/src/Filters/SliceFilter.php',
+    'Flow\JSONPath\AbstractFilter' => 'libraries/JSONPath/src/Filters/AbstractFilter.php',
+    'Flow\JSONPath\IndexesFilter' => 'libraries/JSONPath/src/Filters/IndexesFilter.php',
+    'Flow\JSONPath\IndexFilter' => 'libraries/JSONPath/src/Filters/IndexFilter.php',
+    'Flow\JSONPath\QueryMatchFilter' => 'libraries/JSONPath/src/Filters/QueryMatchFilter.php',
+    'Flow\JSONPath\QueryResultFilter' => 'libraries/JSONPath/src/Filters/QueryResultFilter.php',
+    'Flow\JSONPath\RecursiveFilter' => 'libraries/JSONPath/src/Filters/RecursiveFilter.php',
+    'Flow\JSONPath\SliceFilter' => 'libraries/JSONPath/src/Filters/SliceFilter.php',
   );
 
   return $autoloads;
@@ -56,7 +56,7 @@ function feeds_jsonpath_parser_feeds_plugins() {
 }
 
 
-/******************* Deprecaed below this line ********************************/
+/******************* Deprecated below this line ********************************/
 
 /**
  * Implements hook_libraries_info().
