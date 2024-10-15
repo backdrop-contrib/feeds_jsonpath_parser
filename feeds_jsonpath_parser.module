@@ -17,6 +17,7 @@ function feeds_jsonpath_parser_autoload_info() {
     'FeedsJSONPathParser' => 'FeedsJSONPathParser.inc',
   );
   if (!class_exists('Flow\JSONPath\JSONPath', FALSE)) {
+    // If the library is not loaded elsewhere, load the bundled version here.
     $autoloads += array(
       // Use proper namespace.
       'Flow\JSONPath\JSONPath' => 'libraries/JSONPath/src/JSONPath.php',
