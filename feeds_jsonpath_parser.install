@@ -59,7 +59,7 @@ function feeds_jsonpath_parser_requirements($phase) {
   }
 
   else {
-    // Mising Library.
+    // Missing Library.
     $message = 'The <a href="@jsonpath">JSONPath</a> library is missing. This library is normally included automatically since it is bundled with the <em>feeds_jsonpath_parser</em> module.';
     $substitutions = array(
       '@jsonpath' => 'https://github.com/SoftCreatR/JSONPath',
