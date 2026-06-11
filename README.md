@@ -34,6 +34,7 @@ Current Maintainers
 -------------------
 
 - [Jen Lampton](https://github.com/jenlampton)
+- [Martin Price](https://github.com/yorkshire-pudding)
 - Looking for co-maintainers
 
 
