@@ -7,7 +7,7 @@
 /**
  * Defines which commit to checkout from flow/jsonpath.
  */
-define('FEEDS_JSONPATH_PARSER_LIBRARY_VERSION', '0.4.0');
+define('FEEDS_JSONPATH_PARSER_LIBRARY_VERSION', '0.9.1');
 
 /**
  * Implements hook_autoload_info().
@@ -15,22 +15,25 @@ define('FEEDS_JSONPATH_PARSER_LIBRARY_VERSION', '0.4.0');
 function feeds_jsonpath_parser_autoload_info() {
   $autoloads = array(
     'FeedsJSONPathParser' => 'FeedsJSONPathParser.inc',
-
-// Use proper namespace.
-'Flow\JSONPath\JSONPath' =>                  'libraries/JSONPath/src/Flow/JSONPath/JSONPath.php',
-'Flow\JSONPath\JSONPathException' =>         'libraries/JSONPath/src/Flow/JSONPath/JSONPathException.php',
-'Flow\JSONPath\JSONPathLexer' =>             'libraries/JSONPath/src/Flow/JSONPath/JSONPathLexer.php',
-'Flow\JSONPath\JSONPathToken' =>             'libraries/JSONPath/src/Flow/JSONPath/JSONPathToken.php',
-'Flow\JSONPath\AccessHelper' =>              'libraries/JSONPath/src/Flow/JSONPath/AccessHelper.php',
-
-'Flow\JSONPath\Filters\AbstractFilter' =>    'libraries/JSONPath/src/Flow/JSONPath/Filters/AbstractFilter.php',
-'Flow\JSONPath\Filters\IndexesFilter' =>     'libraries/JSONPath/src/Flow/JSONPath/Filters/IndexesFilter.php',
-'Flow\JSONPath\Filters\IndexFilter' =>       'libraries/JSONPath/src/Flow/JSONPath/Filters/IndexFilter.php',
-'Flow\JSONPath\Filters\QueryMatchFilter' =>  'libraries/JSONPath/src/Flow/JSONPath/Filters/QueryMatchFilter.php',
-'Flow\JSONPath\Filters\QueryResultFilter' => 'libraries/JSONPath/src/Flow/JSONPath/Filters/QueryResultFilter.php',
-'Flow\JSONPath\Filters\RecursiveFilter' =>   'libraries/JSONPath/src/Flow/JSONPath/Filters/RecursiveFilter.php',
-'Flow\JSONPath\Filters\SliceFilter' =>       'libraries/JSONPath/src/Flow/JSONPath/Filters/SliceFilter.php',
   );
+  if (!class_exists('Flow\JSONPath\JSONPath', FALSE)) {
+    // If the library is not loaded elsewhere, load the bundled version here.
+    $autoloads += array(
+      // Use proper namespace.
+      'Flow\JSONPath\JSONPath' => 'libraries/JSONPath/src/JSONPath.php',
+      'Flow\JSONPath\JSONPathException' => 'libraries/JSONPath/src/JSONPathException.php',
+      'Flow\JSONPath\JSONPathLexer' => 'libraries/JSONPath/src/JSONPathLexer.php',
+      'Flow\JSONPath\JSONPathToken' => 'libraries/JSONPath/src/JSONPathToken.php',
+      'Flow\JSONPath\AccessHelper' => 'libraries/JSONPath/src/AccessHelper.php',
+      'Flow\JSONPath\Filters\AbstractFilter' => 'libraries/JSONPath/src/Filters/AbstractFilter.php',
+      'Flow\JSONPath\Filters\IndexesFilter' => 'libraries/JSONPath/src/Filters/IndexesFilter.php',
+      'Flow\JSONPath\Filters\IndexFilter' => 'libraries/JSONPath/src/Filters/IndexFilter.php',
+      'Flow\JSONPath\Filters\QueryMatchFilter' => 'libraries/JSONPath/src/Filters/QueryMatchFilter.php',
+      'Flow\JSONPath\Filters\QueryResultFilter' => 'libraries/JSONPath/src/Filters/QueryResultFilter.php',
+      'Flow\JSONPath\Filters\RecursiveFilter' => 'libraries/JSONPath/src/Filters/RecursiveFilter.php',
+      'Flow\JSONPath\Filters\SliceFilter' => 'libraries/JSONPath/src/Filters/SliceFilter.php',
+    );
+  }
 
   return $autoloads;
 }
@@ -70,9 +73,9 @@ function feeds_jsonpath_parser_libraries_info() {
 
   $libraries['jsonpath'] = array(
     'name' => 'JSONPath',
-    'vendor url' => 'https://github.com/FlowCommunications/JSONPath',
-    'download url' => 'https://github.com/FlowCommunications/JSONPath/archive/refs/tags/' . FEEDS_JSONPATH_PARSER_LIBRARY_VERSION . '.zip',
-    'version' => '0.4.0',
+    'vendor url' => 'https://github.com/SoftCreatR/JSONPath',
+    'download url' => 'https://github.com/SoftCreatR/JSONPath/releases/tag/' . FEEDS_JSONPATH_PARSER_LIBRARY_VERSION . '.zip',
+    'version' => '0.9.1',
   );
 
   return $libraries;

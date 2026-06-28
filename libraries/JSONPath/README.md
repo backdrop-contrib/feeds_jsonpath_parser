@@ -1,5 +1,9 @@
-JSONPath
-=============
+# JSONPath for PHP 8.1+
+
+[![Build](https://img.shields.io/github/actions/workflow/status/SoftCreatR/JSONPath/.github/workflows/Test.yml?branch=main)](https://github.com/SoftCreatR/JSONPath/actions/workflows/Test.yml) [![Latest Release](https://img.shields.io/packagist/v/SoftCreatR/JSONPath?color=blue&label=Latest%20Release)](https://packagist.org/packages/softcreatr/jsonpath)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Plant Tree](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Fsoftcreatr%2Ftrees)](https://ecologi.com/softcreatr?r=61212ab3fc69b8eb8a2014f4)
+[![Codecov branch](https://img.shields.io/codecov/c/github/SoftCreatR/JSONPath)](https://codecov.io/gh/SoftCreatR/JSONPath)
+[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability-percentage/SoftCreatR/JSONPath)](https://codeclimate.com/github/SoftCreatR/JSONPath)
 
 This is a [JSONPath](http://goessner.net/articles/JsonPath/) implementation for PHP based on Stefan Goessner's JSONPath script.
 
@@ -14,8 +18,13 @@ I believe that is improves on the original script (which was last updated in 200
 -   Any combination of objects/arrays/ArrayAccess-objects can be used as the data input which is great if you're de-serializing JSON in to objects
     or if you want to process your own data structures.
 
-JSONPath Examples
----
+## Installation
+
+```bash
+composer require softcreatr/jsonpath:"^0.9"
+```
+
+## JSONPath Examples
 
 JSONPath                  | Result
 --------------------------|-------------------------------------
@@ -96,7 +105,7 @@ Similar projects
 
 [JMESPath](https://github.com/jmespath) does similiar things, is full of features and has a PHP implementation
 
-The [Hash](http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html) utility from CakePHP does some similar things 
+The [Hash](http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html) utility from CakePHP does some similar things
 
 The original JsonPath implementations is available at [http://code.google.com/p/jsonpath]() and re-hosted for composer
 here [Peekmo/JsonPath](https://github.com/Peekmo/JsonPath).
@@ -119,5 +128,67 @@ Changelog
 ### 0.2.0
  - Added a heap of array access features for more creative iterating and chaining possibilities
 
-### 0.1.x
- - Init
+## Contributors ✨
+
+<table>
+<tr>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/SoftCreatR>
+            <img src=https://avatars.githubusercontent.com/u/81188?v=4 width="100;"  alt=Sascha Greuel/>
+            <br />
+            <sub style="font-size:14px"><b>Sascha Greuel</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/Schrank>
+            <img src=https://avatars.githubusercontent.com/u/379680?v=4 width="100;"  alt=Fabian Blechschmidt/>
+            <br />
+            <sub style="font-size:14px"><b>Fabian Blechschmidt</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/warlof>
+            <img src=https://avatars.githubusercontent.com/u/648753?v=4 width="100;"  alt=Loïc Leuilliot/>
+            <br />
+            <sub style="font-size:14px"><b>Loïc Leuilliot</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/SG5>
+            <img src=https://avatars.githubusercontent.com/u/3931761?v=4 width="100;"  alt=Sergey/>
+            <br />
+            <sub style="font-size:14px"><b>Sergey</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/drealecs>
+            <img src=https://avatars.githubusercontent.com/u/209984?v=4 width="100;"  alt=Alexandru Pătrănescu/>
+            <br />
+            <sub style="font-size:14px"><b>Alexandru Pătrănescu</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/oleg-andreyev>
+            <img src=https://avatars.githubusercontent.com/u/1244112?v=4 width="100;"  alt=Oleg Andreyev/>
+            <br />
+            <sub style="font-size:14px"><b>Oleg Andreyev</b></sub>
+        </a>
+    </td>
+</tr>
+<tr>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/rcjsuen>
+            <img src=https://avatars.githubusercontent.com/u/15629116?v=4 width="100;"  alt=Remy Suen/>
+            <br />
+            <sub style="font-size:14px"><b>Remy Suen</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/esomething>
+            <img src=https://avatars.githubusercontent.com/u/64032?v=4 width="100;"  alt=esomething/>
+            <br />
+            <sub style="font-size:14px"><b>esomething</b></sub>
+        </a>
+    </td>
+</tr>
+</table>
